@@ -105,7 +105,6 @@ const (
 	DiffLineNoNewline
 )
 
-
 // Event messages for BubbleTea
 type (
 	// Immediate events (fsnotify)
@@ -814,7 +813,6 @@ func (m Model) handleDiffScrollDown() (Model, tea.Cmd) {
 	return m, nil
 }
 
-
 // handleShowConfirmDialog sets up a confirmation dialog
 func (m Model) handleShowConfirmDialog(msg showConfirmDialogMsg) (Model, tea.Cmd) {
 	m.confirmDialog = &ConfirmDialog{
@@ -1012,7 +1010,6 @@ func (m Model) publishSession(sessionID string) tea.Cmd {
 		}
 	}
 }
-
 
 // executeCommand executes a shell command
 func executeCommand(command string, args ...string) error {

@@ -54,24 +54,24 @@ var (
 			Background(lipgloss.Color("22"))
 
 	diffRemovedStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("1")).
-			Background(lipgloss.Color("52"))
+				Foreground(lipgloss.Color("1")).
+				Background(lipgloss.Color("52"))
 
 	diffContextStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("7"))
+				Foreground(lipgloss.Color("7"))
 
 	diffFileHeaderStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("5"))
+				Bold(true).
+				Foreground(lipgloss.Color("5"))
 
 	diffHunkHeaderStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("6"))
+				Bold(true).
+				Foreground(lipgloss.Color("6"))
 
 	diffLineNumStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("8")).
-			Width(4).
-			Align(lipgloss.Right)
+				Foreground(lipgloss.Color("8")).
+				Width(4).
+				Align(lipgloss.Right)
 )
 
 // View renders the entire TUI
@@ -909,7 +909,7 @@ func (m Model) renderDiffMode() string {
 	lines = append(lines, "")
 
 	// Content area height calculation
-	headerLines := 3 // header + controls + blank
+	headerLines := 3                            // header + controls + blank
 	contentHeight := m.height - headerLines - 1 // minus 1 for potential bottom margin
 
 	// Render unified diff content
@@ -949,12 +949,11 @@ func (m Model) renderDiffUnified(maxLines int) []string {
 	return lines
 }
 
-
 // renderDiffLine renders a single diff line with appropriate styling
 func (m Model) renderDiffLine(line DiffLine, showLineNumbers bool) string {
 	var prefix string
 	var style lipgloss.Style
-	
+
 	switch line.Type {
 	case DiffLineAdded:
 		prefix = "+"
@@ -996,6 +995,6 @@ func (m Model) renderDiffLine(line DiffLine, showLineNumbers bool) string {
 	if lineNumStr != "" {
 		return lineNumStr + " " + prefix + style.Render(content)
 	}
-	
+
 	return prefix + style.Render(content)
 }
