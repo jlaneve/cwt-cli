@@ -5,6 +5,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -408,4 +411,125 @@ func (m Model) findClaudeExecutable() string {
 	}
 
 	return ""
+}
+
+// loadDiffData loads diff data for the current session
+func (m Model) loadDiffData() tea.Cmd {
+	return func() tea.Msg {
+		if m.diffMode == nil {
+			return diffErrorMsg{err: fmt.Errorf("diff mode not initialized")}
+		}
+
+		// Change to session worktree directory
+		originalDir, err := os.Getwd()
+		if err != nil {
+			return diffErrorMsg{err: fmt.Errorf("failed to get current directory: %w", err)}
+		}
+		defer os.Chdir(originalDir)
+
+		// Validate that the worktree path is a git repository
+		worktreePath := m.diffMode.session.Core.WorktreePath
+		if _, err := os.Stat(filepath.Join(worktreePath, ".git")); err != nil {
+			return diffErrorMsg{err: fmt.Errorf("not a git repository: %s", worktreePath)}
+		}
+
+		if err := os.Chdir(worktreePath); err != nil {
+			return diffErrorMsg{err: fmt.Errorf("failed to change to worktree directory: %w", err)}
+		}
+
+		// Build git diff command
+		var cmd *exec.Cmd
+		if m.diffMode.cached {
+			cmd = exec.Command("git", "diff", "--cached", "--no-color")
+		} else {
+			cmd = exec.Command("git", "diff", m.diffMode.target, "--no-color")
+		}
+
+		output, err := cmd.Output()
+		if err != nil {
+			return diffErrorMsg{err: fmt.Errorf("failed to get diff: %w", err)}
+		}
+
+		// Parse diff output into DiffLine structures
+		diffLines := parseDiffOutput(string(output))
+		return diffLoadedMsg{diffLines: diffLines}
+	}
+}
+
+// parseDiffOutput parses git diff output into structured diff lines
+func parseDiffOutput(output string) []DiffLine {
+	lines := strings.Split(output, "\n")
+	var diffLines []DiffLine
+	var currentHunk int
+	var currentFile string
+	var oldLineNum, newLineNum int
+
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+
+		var diffLine DiffLine
+		diffLine.Content = line
+		diffLine.HunkID = currentHunk
+		diffLine.FileName = currentFile
+		diffLine.OldLine = oldLineNum
+		diffLine.NewLine = newLineNum
+
+		switch {
+		case strings.HasPrefix(line, "diff --git"):
+			diffLine.Type = DiffLineFileHeader
+			// Extract filename from diff header
+			parts := strings.Fields(line)
+			if len(parts) >= 4 {
+				currentFile = strings.TrimPrefix(parts[3], "b/")
+			}
+
+		case strings.HasPrefix(line, "index "):
+			diffLine.Type = DiffLineHeader
+
+		case strings.HasPrefix(line, "--- ") || strings.HasPrefix(line, "+++ "):
+			diffLine.Type = DiffLineHeader
+
+		case strings.HasPrefix(line, "@@"):
+			diffLine.Type = DiffLineHunkHeader
+			currentHunk++
+			// Parse line numbers from hunk header
+			if matches := regexp.MustCompile(`-(\d+)(?:,\d+)? \+(\d+)`).FindStringSubmatch(line); len(matches) >= 3 {
+				if old, err := strconv.Atoi(matches[1]); err == nil {
+					oldLineNum = old
+				}
+				if new, err := strconv.Atoi(matches[2]); err == nil {
+					newLineNum = new
+				}
+			}
+
+		case strings.HasPrefix(line, "+"):
+			diffLine.Type = DiffLineAdded
+			diffLine.NewLine = newLineNum
+			newLineNum++
+
+		case strings.HasPrefix(line, "-"):
+			diffLine.Type = DiffLineRemoved
+			diffLine.OldLine = oldLineNum
+			oldLineNum++
+
+		case strings.HasPrefix(line, " "):
+			diffLine.Type = DiffLineContext
+			diffLine.OldLine = oldLineNum
+			diffLine.NewLine = newLineNum
+			oldLineNum++
+			newLineNum++
+
+		case strings.HasPrefix(line, "\\"):
+			diffLine.Type = DiffLineNoNewline
+
+		default:
+			diffLine.Type = DiffLineContext
+		}
+
+		diffLines = append(diffLines, diffLine)
+	}
+
+	return diffLines
 }
