@@ -38,7 +38,7 @@ the engineering manager and Claude Code sessions are your engineers working on i
 	rootCmd.PersistentFlags().StringVar(&baseBranch, "base-branch", "main", "Base branch for creating worktrees")
 
 	// Add subcommands with annotations for grouping
-	
+
 	// Session Management
 	sessionMgmt := []*cobra.Command{
 		addAnnotation(newNewCmd(), "session-mgmt"),
@@ -46,32 +46,32 @@ the engineering manager and Claude Code sessions are your engineers working on i
 		addAnnotation(newDeleteCmd(), "session-mgmt"),
 		addAnnotation(newCleanupCmd(), "session-mgmt"),
 	}
-	
+
 	// Session Workflow (Branch Lifecycle)
 	sessionWorkflow := []*cobra.Command{
 		addAnnotation(newSwitchCmd(), "session-workflow"),
 		addAnnotation(newMergeCmd(), "session-workflow"),
 		addAnnotation(newPublishCmd(), "session-workflow"),
 	}
-	
+
 	// Information & Monitoring
 	info := []*cobra.Command{
 		addAnnotation(newListCmd(), "info"),
 		addAnnotation(newStatusCmd(), "info"),
 		addAnnotation(newDiffCmd(), "info"),
 	}
-	
+
 	// Interface & Utilities
 	interface_utils := []*cobra.Command{
 		addAnnotation(newTuiCmd(), "interface"),
 		addAnnotation(newFixHooksCmd(), "interface"),
 	}
-	
+
 	// Hidden/Internal commands (no annotation needed)
 	hidden := []*cobra.Command{
 		newHookCmd(), // Hidden internal command
 	}
-	
+
 	// Add all commands
 	for _, cmd := range sessionMgmt {
 		rootCmd.AddCommand(cmd)

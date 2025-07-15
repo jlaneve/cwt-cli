@@ -166,10 +166,10 @@ func TestManager_FindStaleSessions(t *testing.T) {
 func TestManager_LoadCoreSessions_CorruptedJSON(t *testing.T) {
 	tmpDir := t.TempDir()
 	dataDir := filepath.Join(tmpDir, ".cwt")
-	
+
 	// Create directory
 	os.MkdirAll(dataDir, 0755)
-	
+
 	// Write corrupted JSON
 	sessionsFile := filepath.Join(dataDir, "sessions.json")
 	os.WriteFile(sessionsFile, []byte("invalid json{"), 0644)

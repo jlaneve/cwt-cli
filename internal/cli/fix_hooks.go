@@ -47,11 +47,11 @@ func runFixHooksCmd(cmd *cobra.Command, args []string) error {
 
 	// Get the correct cwt executable path
 	correctPath := getCwtExecutablePath()
-	
+
 	fixed := 0
 	for _, session := range sessions {
 		settingsPath := filepath.Join(session.Core.WorktreePath, "settings.json")
-		
+
 		if updated, err := fixSettingsFile(settingsPath, session.Core.ID, correctPath); err != nil {
 			fmt.Printf("⚠️  Failed to fix hooks for session '%s': %v\n", session.Core.Name, err)
 		} else if updated {
@@ -205,7 +205,7 @@ func getCwtExecutablePath() string {
 	if path, err := exec.LookPath("cwt"); err == nil {
 		return path
 	}
-	
+
 	// Check if we're running from go run (has temp executable path)
 	if execPath, err := os.Executable(); err == nil {
 		// If it's a temp path from go run, use "go run cmd/cwt/main.go" instead
@@ -219,7 +219,7 @@ func getCwtExecutablePath() string {
 			return execPath
 		}
 	}
-	
+
 	// Final fallback to "cwt" in PATH
 	return "cwt"
 }

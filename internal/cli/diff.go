@@ -94,12 +94,12 @@ func interactiveDiff(sm *state.Manager, against string, web, stat, nameOnly, cac
 	}
 
 	// Use selector with filter for sessions with changes
-	selectedSession, err := SelectSession(sessions, 
+	selectedSession, err := SelectSession(sessions,
 		WithTitle("Select a session to view diff:"),
 		WithSessionFilter(func(session types.Session) bool {
 			return session.GitStatus.HasChanges
 		}))
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to select session: %w", err)
 	}
@@ -139,13 +139,13 @@ func renderSessionDiff(session types.Session, against string, web, stat, nameOnl
 	// Show diff header
 	fmt.Printf("📋 Diff for session: %s\n", session.Core.Name)
 	fmt.Printf("📂 Path: %s\n", session.Core.WorktreePath)
-	
+
 	if cached {
 		fmt.Printf("🔍 Comparing: staged changes\n")
 	} else {
 		fmt.Printf("🔍 Comparing: working tree vs %s\n", target)
 	}
-	
+
 	fmt.Println(strings.Repeat("=", 70))
 
 	// Show summary stats first
@@ -171,7 +171,7 @@ func renderSessionDiff(session types.Session, against string, web, stat, nameOnl
 // showDiffStats shows diff statistics
 func showDiffStats(target string, cached bool) error {
 	var cmd *exec.Cmd
-	
+
 	if cached {
 		cmd = exec.Command("git", "diff", "--cached", "--stat")
 	} else {
@@ -196,7 +196,7 @@ func showDiffStats(target string, cached bool) error {
 // showDiffFileNames shows only the names of changed files
 func showDiffFileNames(target string, cached bool) error {
 	var cmd *exec.Cmd
-	
+
 	if cached {
 		cmd = exec.Command("git", "diff", "--cached", "--name-status")
 	} else {
@@ -215,20 +215,20 @@ func showDiffFileNames(target string, cached bool) error {
 
 	fmt.Println("📁 Changed Files:")
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	
+
 	for _, line := range lines {
 		if line == "" {
 			continue
 		}
-		
+
 		parts := strings.SplitN(line, "\t", 2)
 		if len(parts) != 2 {
 			continue
 		}
-		
+
 		status := parts[0]
 		filename := parts[1]
-		
+
 		icon := getFileStatusIcon(status)
 		fmt.Printf("  %s %s %s\n", icon, status, filename)
 	}
@@ -239,7 +239,7 @@ func showDiffFileNames(target string, cached bool) error {
 // showFullDiff shows the complete diff with syntax highlighting
 func showFullDiff(target string, cached bool) error {
 	var cmd *exec.Cmd
-	
+
 	if cached {
 		cmd = exec.Command("git", "diff", "--cached", "--color=always")
 	} else {
@@ -256,7 +256,7 @@ func showFullDiff(target string, cached bool) error {
 	// Fallback to direct output
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to show diff: %w", err)
 	}
@@ -293,7 +293,7 @@ func openWithViewer(viewer, target string, cached bool) error {
 	fmt.Printf("📋 Preferred viewer: %s\n", viewer)
 	fmt.Println("📋 Falling back to terminal diff:")
 	fmt.Println(strings.Repeat("-", 50))
-	
+
 	return showFullDiff(target, cached)
 }
 
@@ -302,7 +302,7 @@ func openWithSystemDefault(target string, cached bool) error {
 	fmt.Println("🔧 System default diff viewer not yet implemented")
 	fmt.Println("📋 Falling back to terminal diff:")
 	fmt.Println(strings.Repeat("-", 50))
-	
+
 	return showFullDiff(target, cached)
 }
 
@@ -330,12 +330,12 @@ func isInteractiveTerminal() bool {
 	if os.Getenv("TERM") == "" {
 		return false
 	}
-	
+
 	// Check if stdout is a terminal
 	if stat, err := os.Stdout.Stat(); err == nil {
 		return (stat.Mode() & os.ModeCharDevice) != 0
 	}
-	
+
 	return false
 }
 
@@ -344,11 +344,11 @@ func getPager() string {
 	if pager := os.Getenv("GIT_PAGER"); pager != "" {
 		return pager
 	}
-	
+
 	if pager := os.Getenv("PAGER"); pager != "" {
 		return pager
 	}
-	
+
 	// Try common pagers
 	pagers := []string{"less", "more", "cat"}
 	for _, pager := range pagers {
@@ -359,41 +359,41 @@ func getPager() string {
 			return pager
 		}
 	}
-	
+
 	return ""
 }
 
 func runDiffWithPager(cmd *exec.Cmd, pager string) error {
 	// Create a pipe from git diff to pager
 	pagerCmd := exec.Command("sh", "-c", pager)
-	
+
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create pipe: %w", err)
 	}
-	
+
 	pagerCmd.Stdin = pipe
 	pagerCmd.Stdout = os.Stdout
 	pagerCmd.Stderr = os.Stderr
-	
+
 	if err := pagerCmd.Start(); err != nil {
 		return fmt.Errorf("failed to start pager: %w", err)
 	}
-	
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start git diff: %w", err)
 	}
-	
+
 	if err := cmd.Wait(); err != nil {
 		pipe.Close()
 		return fmt.Errorf("git diff failed: %w", err)
 	}
-	
+
 	pipe.Close()
-	
+
 	if err := pagerCmd.Wait(); err != nil {
 		return fmt.Errorf("pager failed: %w", err)
 	}
-	
+
 	return nil
 }

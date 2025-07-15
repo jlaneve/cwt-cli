@@ -301,11 +301,11 @@ func (r *RealChecker) getGitUserConfig() (string, string) {
 
 // MockChecker implements Checker for testing
 type MockChecker struct {
-	Statuses    map[string]types.GitStatus
-	Worktrees   map[string]bool
-	ShouldFail  map[string]bool
-	Delay       time.Duration
-	ValidRepo   bool
+	Statuses   map[string]types.GitStatus
+	Worktrees  map[string]bool
+	ShouldFail map[string]bool
+	Delay      time.Duration
+	ValidRepo  bool
 }
 
 // NewMockChecker creates a new MockChecker

@@ -83,29 +83,29 @@ func runAttachCmd(cmd *cobra.Command, args []string) error {
 		fmt.Printf("  • The Claude Code process exited\n")
 		fmt.Printf("  • The tmux session was manually terminated\n")
 		fmt.Printf("  • There was a system restart\n\n")
-		
+
 		// Ask user if they want to recreate the session
 		fmt.Printf("Do you want to recreate the tmux session? (y/N): ")
 		var response string
 		fmt.Scanln(&response)
-		
+
 		if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
 			fmt.Println("Session not recreated.")
 			return fmt.Errorf("cannot attach to dead tmux session")
 		}
-		
+
 		// Recreate the tmux session with Claude resumption
 		if err := recreateSessionWithClaudeResume(sm, sessionToAttach); err != nil {
 			return fmt.Errorf("failed to recreate session: %w", err)
 		}
-		
+
 		fmt.Printf("✅ Session '%s' recreated successfully\n", sessionToAttach.Core.Name)
 	}
 
 	// Attach to tmux session
-	fmt.Printf("🔗 Attaching to session '%s' (tmux: %s)...\n", 
+	fmt.Printf("🔗 Attaching to session '%s' (tmux: %s)...\n",
 		sessionToAttach.Core.Name, sessionToAttach.Core.TmuxSession)
-	
+
 	// Use exec to replace current process with tmux attach
 	tmuxPath, err := exec.LookPath("tmux")
 	if err != nil {
@@ -124,11 +124,11 @@ func runAttachCmd(cmd *cobra.Command, args []string) error {
 
 func promptForAttachSelection(sessions []types.Session) (*types.Session, error) {
 	fmt.Println("Multiple sessions found. Select one to attach to:")
-	
+
 	// Filter to only show alive sessions
 	aliveSessions := make([]types.Session, 0)
 	deadSessions := make([]types.Session, 0)
-	
+
 	for _, session := range sessions {
 		if session.IsAlive {
 			aliveSessions = append(aliveSessions, session)
@@ -170,7 +170,7 @@ func recreateSessionWithClaudeResume(sm *state.Manager, session *types.Session) 
 	if claudeExec == "" {
 		return fmt.Errorf("claude executable not found")
 	}
-	
+
 	// Check if there's an existing Claude session to resume for this worktree
 	var command string
 	if existingSessionID, err := sm.GetClaudeChecker().FindSessionID(session.Core.WorktreePath); err == nil && existingSessionID != "" {
@@ -180,13 +180,13 @@ func recreateSessionWithClaudeResume(sm *state.Manager, session *types.Session) 
 		command = claudeExec
 		fmt.Printf("🆕 Starting new Claude session\n")
 	}
-	
+
 	// Recreate the tmux session
 	tmuxChecker := sm.GetTmuxChecker()
 	if err := tmuxChecker.CreateSession(session.Core.TmuxSession, session.Core.WorktreePath, command); err != nil {
 		return fmt.Errorf("failed to recreate tmux session: %w", err)
 	}
-	
+
 	return nil
 }
 

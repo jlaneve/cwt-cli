@@ -44,15 +44,15 @@ func Run(stateManager *state.Manager) error {
 					logger.Printf("Run: Calling attachToTmuxSession")
 					logFile.Close()
 				}
-				
+
 				// Attach to tmux session
 				if err := attachToTmuxSession(sessionName); err != nil {
 					return err
 				}
-				
+
 				// When tmux exits, show transition message and restart TUI
 				fmt.Println("\n🔄 Tmux session ended. Returning to CWT dashboard...")
-				
+
 				// Continue the loop to restart TUI
 				continue
 			}
@@ -71,10 +71,10 @@ func attachToTmuxSession(sessionName string) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to attach to tmux session '%s': %w", sessionName, err)
 	}
-	
+
 	return nil
 }

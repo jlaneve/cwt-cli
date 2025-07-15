@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/jlaneve/cwt-cli/internal/state"
+	"github.com/spf13/cobra"
 )
 
 func newCleanupCmd() *cobra.Command {
 	var dryRun bool
-	
+
 	cmd := &cobra.Command{
 		Use:   "cleanup",
 		Short: "Remove orphaned sessions and resources",
@@ -96,7 +96,7 @@ func runCleanupCmd(dryRun bool) error {
 	if cleanupStats.staleSessions > 0 {
 		fmt.Printf("Stale sessions:\n")
 		for _, session := range staleSessions {
-			fmt.Printf("  🗑️  %s (tmux: %s, worktree: %s)\n", 
+			fmt.Printf("  🗑️  %s (tmux: %s, worktree: %s)\n",
 				session.Core.Name, session.Core.TmuxSession, session.Core.WorktreePath)
 		}
 		fmt.Println()
@@ -129,7 +129,7 @@ func runCleanupCmd(dryRun bool) error {
 		fmt.Printf("Cleaning up %d stale session(s)...\n", cleanupStats.staleSessions)
 		for _, session := range staleSessions {
 			fmt.Printf("  Cleaning session '%s'...\n", session.Core.Name)
-			
+
 			if err := sm.DeleteSession(session.Core.ID); err != nil {
 				fmt.Printf("    ❌ Failed: %v\n", err)
 				cleanupStats.failed++
@@ -147,7 +147,7 @@ func runCleanupCmd(dryRun bool) error {
 		tmuxChecker := sm.GetTmuxChecker()
 		for _, tmuxSession := range orphanedTmux {
 			fmt.Printf("  Killing tmux session '%s'...\n", tmuxSession)
-			
+
 			if err := tmuxChecker.KillSession(tmuxSession); err != nil {
 				fmt.Printf("    ❌ Failed: %v\n", err)
 				cleanupStats.failed++
@@ -164,7 +164,7 @@ func runCleanupCmd(dryRun bool) error {
 		fmt.Printf("Cleaning up %d orphaned worktree(s)...\n", cleanupStats.orphanedWorktrees)
 		for _, worktree := range orphanedWorktrees {
 			fmt.Printf("  Removing worktree '%s'...\n", worktree)
-			
+
 			if err := removeWorktreeWithFallback(worktree); err != nil {
 				fmt.Printf("    ❌ Failed: %v\n", err)
 				cleanupStats.failed++
@@ -253,7 +253,7 @@ func findOrphanedWorktrees(sm *state.Manager) ([]string, error) {
 
 		worktreePath := filepath.Join(worktreesDir, entry.Name())
 		absPath, _ := filepath.Abs(worktreePath)
-		
+
 		if !trackedWorktrees[absPath] {
 			orphaned = append(orphaned, worktreePath)
 		}

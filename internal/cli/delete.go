@@ -13,7 +13,7 @@ import (
 
 func newDeleteCmd() *cobra.Command {
 	var force bool
-	
+
 	cmd := &cobra.Command{
 		Use:   "delete [session-name]",
 		Short: "Delete a session and clean up its resources",
@@ -91,7 +91,7 @@ func runDeleteCmd(args []string, force bool) error {
 
 	// Delete session
 	fmt.Printf("Deleting session '%s'...\n", *sessionToDelete)
-	
+
 	if err := sm.DeleteSession(sessionID); err != nil {
 		return fmt.Errorf("failed to delete session: %w", err)
 	}
@@ -116,7 +116,7 @@ func promptForSessionSelection(sessions []types.Session) (string, string, error)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
-	
+
 	for {
 		fmt.Print("Enter selection (1-" + fmt.Sprintf("%d", len(sessions)) + "): ")
 		input, err := reader.ReadString('\n')
@@ -142,7 +142,7 @@ func promptForSessionSelection(sessions []types.Session) (string, string, error)
 
 func confirmDeletion(sessionName string) bool {
 	reader := bufio.NewReader(os.Stdin)
-	
+
 	fmt.Printf("Are you sure you want to delete session '%s'? This cannot be undone. (y/N): ", sessionName)
 	input, err := reader.ReadString('\n')
 	if err != nil {

@@ -14,10 +14,10 @@ import (
 // newHookCmd creates the hidden hook command for Claude Code integration
 func newHookCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:    "__hook [session-id] [event-type]",
+		Use:     "__hook [session-id] [event-type]",
 		Aliases: []string{"hook"}, // Add alias for troubleshooting
-		Hidden: true, // Don't show in help output
-		Short:  "Internal hook handler for Claude Code events",
+		Hidden:  true,             // Don't show in help output
+		Short:   "Internal hook handler for Claude Code events",
 		Long: `This is an internal command used by Claude Code hooks.
 It receives session events and updates session state files.
 
@@ -33,7 +33,7 @@ and should not be called manually.`,
 func runHookCmd(cmd *cobra.Command, args []string) error {
 	sessionID := args[0]
 	eventType := args[1]
-	
+
 	// Debug: log what we received (comment out in production)
 	// fmt.Fprintf(os.Stderr, "Hook called with args: %v\n", args)
 

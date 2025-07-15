@@ -170,7 +170,7 @@ func generateCommitMessage(sessionName, worktreePath string) string {
 func extractClaudeWorkSummary(worktreePath string) string {
 	// Look for Claude's session state or recent JSONL activity
 	sessionStateDir := filepath.Join(worktreePath, ".claude", "session_state")
-	
+
 	// This is a simplified implementation - in a full version,
 	// you'd parse Claude's actual activity logs
 	if _, err := os.Stat(sessionStateDir); err == nil {
@@ -206,7 +206,7 @@ func analyzeChanges() string {
 
 	// Analyze file types and create descriptive message
 	var goFiles, jsFiles, pyFiles, otherFiles int
-	
+
 	for _, file := range files {
 		if file == "" {
 			continue
@@ -315,7 +315,7 @@ func hasGitHubCLI() bool {
 func createPullRequest(branch string, draft bool) error {
 	sessionName := strings.TrimPrefix(branch, "cwt-")
 	title := fmt.Sprintf("feat(%s): Session changes", sessionName)
-	
+
 	body := fmt.Sprintf(`## Summary
 Changes from CWT session: %s
 
@@ -323,8 +323,8 @@ Changes from CWT session: %s
 - Session branch: %s
 - Created: %s
 
-🤖 Generated with [Claude Code](https://claude.ai/code)`, 
-		sessionName, 
+🤖 Generated with [Claude Code](https://claude.ai/code)`,
+		sessionName,
 		branch,
 		time.Now().Format("2006-01-02 15:04:05"))
 
@@ -337,7 +337,7 @@ Changes from CWT session: %s
 	cmd := exec.Command("gh", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to create pull request: %w", err)
 	}

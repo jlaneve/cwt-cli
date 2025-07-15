@@ -180,13 +180,13 @@ func TestEventBus_DifferentEventTypes(t *testing.T) {
 		types.SessionDeleted{SessionID: "1"},
 		types.SessionDeletionFailed{SessionID: "1", Error: "error"},
 		types.ClaudeStatusChanged{
-			SessionID: "1", 
+			SessionID: "1",
 			OldStatus: types.ClaudeStatus{State: types.ClaudeUnknown},
 			NewStatus: types.ClaudeStatus{State: types.ClaudeWorking},
 		},
 		types.TmuxSessionDied{SessionID: "1", TmuxSession: "cwt-test"},
 		types.GitChangesDetected{
-			SessionID: "1", 
+			SessionID: "1",
 			NewStatus: types.GitStatus{HasChanges: true, ModifiedFiles: []string{"test.txt"}},
 		},
 		types.RefreshCompleted{Sessions: []types.Session{}, Error: ""},
@@ -200,7 +200,7 @@ func TestEventBus_DifferentEventTypes(t *testing.T) {
 	// Verify all events are received
 	receivedTypes := make(map[string]bool)
 	timeout := time.After(100 * time.Millisecond)
-	
+
 	for i := 0; i < len(events); i++ {
 		select {
 		case event := <-ch:

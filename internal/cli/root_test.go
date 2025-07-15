@@ -67,7 +67,7 @@ func TestNewCommands(t *testing.T) {
 	}
 
 	rootCmd := NewRootCmd()
-	
+
 	for _, cmdName := range commands {
 		found := false
 		for _, cmd := range rootCmd.Commands() {

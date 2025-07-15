@@ -177,10 +177,10 @@ func confirmMerge(sessionName, target string, squash bool) bool {
 	}
 
 	fmt.Printf("\nProceed with %s of session '%s' into '%s'? (y/N): ", mergeType, sessionName, target)
-	
+
 	var response string
 	fmt.Scanln(&response)
-	
+
 	response = strings.ToLower(strings.TrimSpace(response))
 	return response == "y" || response == "yes"
 }
@@ -219,7 +219,7 @@ func performMerge(sessionBranch, targetBranch string, squash bool) error {
 		cmd = exec.Command("git", "commit", "-m", commitMsg)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		
+
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("failed to commit squash merge: %w", err)
 		}
@@ -242,7 +242,7 @@ func branchIsAhead(sourceBranch, targetBranch string) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	count := strings.TrimSpace(string(output))
 	return count != "0"
 }

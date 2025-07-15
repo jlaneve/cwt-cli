@@ -22,7 +22,7 @@ func TestValidateSessionName(t *testing.T) {
 		{"valid 50 chars", strings.Repeat("a", 50), false, ""},
 		{"valid unicode", "session-café", false, ""},
 		{"valid emoji", "session-🚀", false, ""},
-		
+
 		// Invalid names
 		{"empty name", "", true, "session name cannot be empty"},
 		{"too long", strings.Repeat("a", 51), true, "session name too long"},
