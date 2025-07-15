@@ -60,7 +60,7 @@ func showEnhancedStatus(sm *state.Manager, summary, showBranch bool) error {
 
 	if len(sessions) == 0 {
 		fmt.Println("No sessions found.")
-		fmt.Println("\nCreate a new session with: cwt new [session-name] [task-description]")
+		fmt.Println("\nCreate a new session with: cwt new [session-name]")
 		return nil
 	}
 
