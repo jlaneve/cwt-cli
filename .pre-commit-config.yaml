@@ -1,0 +1,33 @@
+repos:
+  # Go formatting and imports
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      # Format Go code with gofmt
+      - id: go-fmt
+      # Organize Go imports
+      - id: go-imports
+      # Run go mod tidy
+      - id: go-mod-tidy
+      # Run go vet
+      - id: go-vet-mod
+      # Build the project to catch compilation errors
+      - id: go-build-mod
+
+  # General hooks for all files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      # Remove trailing whitespace
+      - id: trailing-whitespace
+      # Ensure files end with newline
+      - id: end-of-file-fixer
+      # Check YAML files are valid
+      - id: check-yaml
+      # Check JSON files are valid
+      - id: check-json
+      # Check for merge conflict markers
+      - id: check-merge-conflict
+      # Prevent committing large files
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
