@@ -11,7 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  # Code Quality Checks (formatting, linting, etc.)
+  quality:
+    name: Code Quality
     runs-on: ubuntu-latest
 
     steps:
@@ -36,25 +38,91 @@ jobs:
       - name: Check formatting
         run: |
           if [ "$(gofmt -l .)" != "" ]; then
-            echo "Code is not formatted. Run 'gofmt -w .' to fix."
+            echo "❌ Code is not formatted. Run 'go fmt ./...' to fix."
+            echo "Files that need formatting:"
             gofmt -l .
             exit 1
           fi
+          echo "✅ Code formatting is correct"
 
       - name: Check go mod tidy
         run: |
           go mod tidy
           if ! git diff --quiet go.mod go.sum; then
-            echo "go.mod or go.sum is not tidy. Run 'go mod tidy' to fix."
+            echo "❌ go.mod or go.sum is not tidy. Run 'go mod tidy' to fix."
             git diff go.mod go.sum
             exit 1
           fi
-
-      - name: Build
-        run: go build -v ./...
+          echo "✅ go.mod and go.sum are tidy"
 
       - name: Run linting with go vet
-        run: go vet ./...
+        run: |
+          echo "🔍 Running go vet..."
+          go vet ./...
+          echo "✅ Linting passed"
+
+  # Build Check
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23"
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build
+        run: |
+          echo "🔨 Building..."
+          go build -v ./...
+          echo "✅ Build successful"
+
+  # Tests
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23"
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
 
       - name: Run tests with coverage
-        run: go test -v -coverprofile=coverage.out ./...
+        run: |
+          echo "🧪 Running tests..."
+          go test -v -coverprofile=coverage.out ./...
+          echo "✅ All tests passed"
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.out
+          fail_ci_if_error: false

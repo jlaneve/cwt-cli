@@ -9,6 +9,7 @@ import (
 	"github.com/mattn/go-runewidth"
 	"github.com/spf13/cobra"
 
+	"github.com/jlaneve/cwt-cli/internal/operations"
 	"github.com/jlaneve/cwt-cli/internal/types"
 )
 
@@ -42,11 +43,14 @@ func runListCmd(verbose bool) error {
 	}
 	defer sm.Close()
 
-	// Derive fresh sessions
-	sessions, err := sm.DeriveFreshSessions()
+	// Use operations layer for session retrieval and formatting
+	sessionOps := operations.NewSessionOperations(sm)
+	sessions, err := sessionOps.GetAllSessions()
 	if err != nil {
 		return fmt.Errorf("failed to load sessions: %w", err)
 	}
+
+	formatter := operations.NewStatusFormat()
 
 	if len(sessions) == 0 {
 		fmt.Println("No sessions found.")
@@ -60,15 +64,15 @@ func runListCmd(verbose bool) error {
 	})
 
 	if verbose {
-		renderVerboseSessionList(sessions)
+		renderVerboseSessionList(sessions, formatter)
 	} else {
-		renderCompactSessionList(sessions)
+		renderCompactSessionList(sessions, formatter)
 	}
 
 	return nil
 }
 
-func renderCompactSessionList(sessions []types.Session) {
+func renderCompactSessionList(sessions []types.Session, formatter *operations.StatusFormat) {
 	fmt.Printf("Found %d session(s):\n\n", len(sessions))
 
 	// Calculate max widths for each column based on content
@@ -91,10 +95,10 @@ func renderCompactSessionList(sessions []types.Session) {
 	for i, session := range sessions {
 		rows[i] = rowData{
 			name:     truncate(session.Core.Name, 30),
-			tmux:     formatTmuxStatus(session.IsAlive),
-			claude:   formatClaudeStatus(session.ClaudeStatus),
-			git:      formatGitStatus(session.GitStatus),
-			activity: FormatActivity(session.LastActivity),
+			tmux:     formatter.FormatTmuxStatus(session.IsAlive),
+			claude:   formatter.FormatClaudeStatus(session.ClaudeStatus),
+			git:      formatter.FormatGitStatus(session.GitStatus),
+			activity: formatter.FormatActivity(session.LastActivity),
 		}
 
 		// Update max lengths (using visual length)
@@ -148,7 +152,7 @@ func renderCompactSessionList(sessions []types.Session) {
 	}
 }
 
-func renderVerboseSessionList(sessions []types.Session) {
+func renderVerboseSessionList(sessions []types.Session, formatter *operations.StatusFormat) {
 	fmt.Printf("Found %d session(s):\n\n", len(sessions))
 
 	for i, session := range sessions {
@@ -164,7 +168,7 @@ func renderVerboseSessionList(sessions []types.Session) {
 
 		// Tmux status
 		fmt.Printf("   🖥️  Tmux: %s (session: %s)\n",
-			formatTmuxStatus(session.IsAlive), session.Core.TmuxSession)
+			formatter.FormatTmuxStatus(session.IsAlive), session.Core.TmuxSession)
 
 		// Git status
 		gitDetails := ""
@@ -181,7 +185,7 @@ func renderVerboseSessionList(sessions []types.Session) {
 			}
 			gitDetails = fmt.Sprintf(" (%s)", strings.Join(changes, ", "))
 		}
-		fmt.Printf("   📁 Git: %s%s\n", formatGitStatus(session.GitStatus), gitDetails)
+		fmt.Printf("   📁 Git: %s%s\n", formatter.FormatGitStatus(session.GitStatus), gitDetails)
 
 		// Claude status
 		claudeDetails := ""
@@ -190,9 +194,9 @@ func renderVerboseSessionList(sessions []types.Session) {
 		}
 		if !session.ClaudeStatus.LastMessage.IsZero() {
 			age := time.Since(session.ClaudeStatus.LastMessage)
-			claudeDetails += fmt.Sprintf(" (last: %s ago)", FormatDuration(age))
+			claudeDetails += fmt.Sprintf(" (last: %s ago)", formatter.FormatDuration(age))
 		}
-		fmt.Printf("   🤖 Claude: %s%s\n", formatClaudeStatusShort(session.ClaudeStatus), claudeDetails)
+		fmt.Printf("   🤖 Claude: %s%s\n", formatter.FormatClaudeStatus(session.ClaudeStatus), claudeDetails)
 
 		// Show full message in verbose mode if available
 		if session.ClaudeStatus.StatusMessage != "" {
@@ -200,95 +204,8 @@ func renderVerboseSessionList(sessions []types.Session) {
 		}
 
 		// Last activity
-		fmt.Printf("   ⏰ Activity: %s\n", FormatActivity(session.LastActivity))
+		fmt.Printf("   ⏰ Activity: %s\n", formatter.FormatActivity(session.LastActivity))
 	}
-}
-
-func formatTmuxStatus(isAlive bool) string {
-	if isAlive {
-		return "🟢 alive"
-	}
-	return "🔴 dead"
-}
-
-func formatClaudeStatusShort(status types.ClaudeStatus) string {
-	switch status.State {
-	case types.ClaudeWorking:
-		return "🔄 working"
-	case types.ClaudeWaiting:
-		return "⏸️ waiting"
-	case types.ClaudeComplete:
-		return "✅ complete"
-	case types.ClaudeIdle:
-		return "💤 idle"
-	default:
-		return "❓ unknown"
-	}
-}
-
-func formatClaudeStatus(status types.ClaudeStatus) string {
-	switch status.State {
-	case types.ClaudeWorking:
-		return "🔄 working"
-	case types.ClaudeWaiting:
-		if status.StatusMessage != "" {
-			// Truncate message for compact view
-			msg := status.StatusMessage
-			if len(msg) > 30 {
-				msg = msg[:27] + "..."
-			}
-			return "⏸️ " + msg
-		}
-		return "⏸️ waiting"
-	case types.ClaudeComplete:
-		return "✅ complete"
-	case types.ClaudeIdle:
-		return "💤 idle"
-	default:
-		return "❓ unknown"
-	}
-}
-
-func formatGitStatus(status types.GitStatus) string {
-	if status.HasChanges {
-		// Calculate total changes
-		total := len(status.ModifiedFiles) + len(status.AddedFiles) +
-			len(status.DeletedFiles) + len(status.UntrackedFiles)
-
-		if total == 1 {
-			return "📝 1 change"
-		}
-		return fmt.Sprintf("📝 %d changes", total)
-	}
-	return "✨ clean"
-}
-
-func FormatActivity(lastActivity time.Time) string {
-	if lastActivity.IsZero() {
-		return "unknown"
-	}
-
-	age := time.Since(lastActivity)
-	if age < time.Minute {
-		return "just now"
-	}
-	return FormatDuration(age) + " ago"
-}
-
-func FormatDuration(d time.Duration) string {
-	if d < time.Minute {
-		return "just now"
-	}
-	if d < time.Hour {
-		minutes := int(d.Minutes())
-		return fmt.Sprintf("%dm", minutes)
-	}
-	if d < 24*time.Hour {
-		hours := int(d.Hours())
-		return fmt.Sprintf("%dh", hours)
-	}
-	days := int(d.Hours() / 24)
-	return fmt.Sprintf("%dd", days)
 }
 
 func truncate(s string, maxLen int) string {

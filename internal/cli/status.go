@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jlaneve/cwt-cli/internal/operations"
 	"github.com/jlaneve/cwt-cli/internal/state"
 	"github.com/jlaneve/cwt-cli/internal/types"
 )
@@ -78,6 +79,7 @@ func showEnhancedStatus(sm *state.Manager, summary, showBranch bool) error {
 
 // showStatusSummary shows a high-level summary of all sessions
 func showStatusSummary(sessions []types.Session) error {
+	formatter := operations.NewStatusFormat()
 	fmt.Println("📊 Session Summary")
 	fmt.Println(strings.Repeat("=", 50))
 
@@ -134,7 +136,7 @@ func showStatusSummary(sessions []types.Session) error {
 			if i >= 3 { // Show top 3 most recent
 				break
 			}
-			fmt.Printf("  • %s: %s\n", session.Core.Name, FormatActivity(session.LastActivity))
+			fmt.Printf("  • %s: %s\n", session.Core.Name, formatter.FormatActivity(session.LastActivity))
 		}
 	}
 
@@ -159,6 +161,7 @@ func showDetailedStatus(sessions []types.Session, showBranch bool) error {
 
 // renderSessionStatus renders detailed status for a single session
 func renderSessionStatus(session types.Session, showBranch bool) {
+	formatter := operations.NewStatusFormat()
 	// Session header
 	fmt.Printf("🏷️  %s", session.Core.Name)
 
@@ -185,7 +188,7 @@ func renderSessionStatus(session types.Session, showBranch bool) {
 	fmt.Printf(" (%s)\n", strings.Join(statusIndicators, ", "))
 
 	// Show activity timing
-	fmt.Printf("   ⏰ Last activity: %s\n", FormatActivity(session.LastActivity))
+	fmt.Printf("   ⏰ Last activity: %s\n", formatter.FormatActivity(session.LastActivity))
 
 	// Show Claude status
 	claudeIcon := getClaudeIcon(session.ClaudeStatus.State)
@@ -197,7 +200,7 @@ func renderSessionStatus(session types.Session, showBranch bool) {
 
 	if !session.ClaudeStatus.LastMessage.IsZero() {
 		age := time.Since(session.ClaudeStatus.LastMessage)
-		fmt.Printf(" (last: %s ago)", FormatDuration(age))
+		fmt.Printf(" (last: %s ago)", formatter.FormatDuration(age))
 	}
 	fmt.Println()
 

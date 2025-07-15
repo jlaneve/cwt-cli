@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jlaneve/cwt-cli/internal/operations"
 	"github.com/jlaneve/cwt-cli/internal/types"
 )
 
@@ -42,8 +43,11 @@ func runDeleteCmd(args []string, force bool) error {
 	}
 	defer sm.Close()
 
+	// Create operations layer
+	sessionOps := operations.NewSessionOperations(sm)
+
 	// Get sessions
-	sessions, err := sm.DeriveFreshSessions()
+	sessions, err := sessionOps.GetAllSessions()
 	if err != nil {
 		return fmt.Errorf("failed to load sessions: %w", err)
 	}
@@ -58,19 +62,14 @@ func runDeleteCmd(args []string, force bool) error {
 	var sessionID string
 
 	if len(args) > 0 {
-		// Session name provided
+		// Session name provided - use operations layer
 		sessionName := args[0]
-		for _, session := range sessions {
-			if session.Core.Name == sessionName {
-				sessionToDelete = &sessionName
-				sessionID = session.Core.ID
-				break
-			}
+		session, id, err := sessionOps.FindSessionByName(sessionName)
+		if err != nil {
+			return err
 		}
-
-		if sessionToDelete == nil {
-			return fmt.Errorf("session '%s' not found", sessionName)
-		}
+		sessionToDelete = &session.Core.Name
+		sessionID = id
 	} else {
 		// Interactive selection
 		sessionName, id, err := promptForSessionSelection(sessions)
@@ -89,10 +88,10 @@ func runDeleteCmd(args []string, force bool) error {
 		}
 	}
 
-	// Delete session
+	// Delete session using operations layer
 	fmt.Printf("Deleting session '%s'...\n", *sessionToDelete)
 
-	if err := sm.DeleteSession(sessionID); err != nil {
+	if err := sessionOps.DeleteSession(sessionID); err != nil {
 		return fmt.Errorf("failed to delete session: %w", err)
 	}
 
