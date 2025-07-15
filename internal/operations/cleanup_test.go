@@ -117,7 +117,7 @@ func TestCleanupOperations_FindAndCleanupStaleResources_WithOrphanedTmux(t *test
 	dataDir := filepath.Join(tmpDir, ".cwt")
 
 	tmuxChecker := tmux.NewMockChecker()
-	
+
 	// Add orphaned tmux sessions
 	tmuxChecker.SetSessionAlive("cwt-orphaned-1", true)
 	tmuxChecker.SetSessionAlive("cwt-orphaned-2", true)

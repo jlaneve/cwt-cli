@@ -176,7 +176,7 @@ func TestStatusFormat_FormatActivity(t *testing.T) {
 	formatter := NewStatusFormat()
 
 	now := time.Now()
-	
+
 	tests := []struct {
 		name         string
 		lastActivity time.Time
@@ -216,11 +216,11 @@ func TestStatusFormat_FormatSessionSummary(t *testing.T) {
 	}
 
 	result := formatter.FormatSessionSummary(session)
-	
+
 	// Check that all components are present
 	expectedParts := []string{
 		"tmux: 🟢 alive",
-		"claude: 🔵 working", 
+		"claude: 🔵 working",
 		"git: 🟢 clean",
 		"activity:",
 		"minutes ago",

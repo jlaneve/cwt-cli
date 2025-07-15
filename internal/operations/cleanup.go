@@ -48,7 +48,7 @@ func (c *CleanupOperations) FindAndCleanupStaleResources(dryRun bool) (*CleanupS
 	// Clean up stale sessions
 	for _, session := range staleSessions {
 		if dryRun {
-			fmt.Printf("Would clean up stale session: %s (tmux: %s, worktree: %s)\n", 
+			fmt.Printf("Would clean up stale session: %s (tmux: %s, worktree: %s)\n",
 				session.Core.Name, session.Core.TmuxSession, session.Core.WorktreePath)
 			continue
 		}
@@ -145,7 +145,7 @@ func (c *CleanupOperations) findOrphanedTmuxSessions() ([]string, error) {
 // findOrphanedWorktrees finds git worktrees in .cwt/worktrees/ that don't have corresponding CWT sessions
 func (c *CleanupOperations) findOrphanedWorktrees() ([]string, error) {
 	worktreesDir := filepath.Join(c.stateManager.GetDataDir(), "worktrees")
-	
+
 	// Check if worktrees directory exists
 	if _, err := os.Stat(worktreesDir); os.IsNotExist(err) {
 		return nil, nil // No worktrees directory means no orphaned worktrees
@@ -188,7 +188,7 @@ func (c *CleanupOperations) killTmuxSession(sessionName string) error {
 // removeWorktree removes a git worktree
 func (c *CleanupOperations) removeWorktree(name string) error {
 	worktreePath := filepath.Join(c.stateManager.GetDataDir(), "worktrees", name)
-	
+
 	// Use git worktree remove command
 	cmd := exec.Command("git", "worktree", "remove", worktreePath)
 	if err := cmd.Run(); err != nil {
@@ -199,6 +199,6 @@ func (c *CleanupOperations) removeWorktree(name string) error {
 			return os.RemoveAll(worktreePath)
 		}
 	}
-	
+
 	return nil
 }

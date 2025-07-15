@@ -511,7 +511,6 @@ func findClaudeExecutable() string {
 	return ""
 }
 
-
 // GetDataDir returns the data directory path
 func (m *Manager) GetDataDir() string {
 	return m.config.DataDir

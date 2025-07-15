@@ -54,7 +54,7 @@ func (f *StatusFormat) FormatGitStatus(gitStatus types.GitStatus) string {
 	}
 
 	parts := []string{}
-	
+
 	if len(gitStatus.ModifiedFiles) > 0 {
 		if len(gitStatus.ModifiedFiles) == 1 {
 			parts = append(parts, "1 file")
@@ -62,7 +62,7 @@ func (f *StatusFormat) FormatGitStatus(gitStatus types.GitStatus) string {
 			parts = append(parts, fmt.Sprintf("%d files", len(gitStatus.ModifiedFiles)))
 		}
 	}
-	
+
 	if len(gitStatus.UntrackedFiles) > 0 {
 		if len(gitStatus.UntrackedFiles) == 1 {
 			parts = append(parts, "1 untracked")
@@ -120,7 +120,7 @@ func (f *StatusFormat) FormatSessionSummary(session types.Session) string {
 	git := f.FormatGitStatus(session.GitStatus)
 	activity := f.FormatActivity(session.LastActivity)
 
-	return fmt.Sprintf("tmux: %s | claude: %s | git: %s | activity: %s", 
+	return fmt.Sprintf("tmux: %s | claude: %s | git: %s | activity: %s",
 		tmux, claude, git, activity)
 }
 
@@ -131,14 +131,14 @@ func (f *StatusFormat) FormatSessionList(sessions []types.Session, detailed bool
 	}
 
 	var result strings.Builder
-	
+
 	for i, session := range sessions {
 		if i > 0 {
 			result.WriteString("\n")
 		}
-		
+
 		result.WriteString(fmt.Sprintf("📂 %s", session.Core.Name))
-		
+
 		if detailed {
 			result.WriteString(fmt.Sprintf(" (%s)", session.Core.ID))
 			result.WriteString(fmt.Sprintf("\n   %s", f.FormatSessionSummary(session)))
@@ -147,6 +147,6 @@ func (f *StatusFormat) FormatSessionList(sessions []types.Session, detailed bool
 			result.WriteString(fmt.Sprintf(" - %s", f.FormatSessionSummary(session)))
 		}
 	}
-	
+
 	return result.String()
 }

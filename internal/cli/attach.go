@@ -167,14 +167,13 @@ func promptForAttachSelection(sessions []types.Session) (*types.Session, error) 
 // recreateSessionWithClaudeResume recreates a dead tmux session and resumes Claude if possible
 func recreateSessionWithClaudeResume(sm *state.Manager, session *types.Session) error {
 	sessionOps := operations.NewSessionOperations(sm)
-	
+
 	// Use operations layer for recreation logic
 	fmt.Printf("📋 Recreating session with Claude resume...\n")
-	
+
 	if err := sessionOps.RecreateDeadSession(session); err != nil {
 		return fmt.Errorf("failed to recreate session: %w", err)
 	}
 
 	return nil
 }
-

@@ -184,16 +184,16 @@ func TestSessionOperations_DeleteSession(t *testing.T) {
 
 func TestFindClaudeExecutable(t *testing.T) {
 	// This test checks that the function doesn't crash
-	// We can't reliably test the actual finding logic without 
+	// We can't reliably test the actual finding logic without
 	// modifying PATH or creating fake executables
 	result := FindClaudeExecutable()
-	
+
 	// Should return a string (empty if not found)
 	if result == "" {
 		t.Log("Claude executable not found in PATH (this is expected in test environment)")
 	} else {
 		t.Logf("Found Claude executable at: %s", result)
-		
+
 		// If we found something, verify it's actually executable
 		if _, err := exec.LookPath(result); err != nil {
 			t.Errorf("FindClaudeExecutable() returned %q but it's not in PATH: %v", result, err)
@@ -207,7 +207,7 @@ func TestSessionOperations_RecreateDeadSession(t *testing.T) {
 
 	tmuxChecker := tmux.NewMockChecker()
 	claudeChecker := claude.NewMockChecker()
-	
+
 	config := state.Config{
 		DataDir:       dataDir,
 		TmuxChecker:   tmuxChecker,
@@ -235,7 +235,7 @@ func TestSessionOperations_RecreateDeadSession(t *testing.T) {
 
 	// Test recreating session (will only work if claude executable is available)
 	err = sessionOps.RecreateDeadSession(session)
-	
+
 	// If claude is not available, expect specific error
 	claudeExec := FindClaudeExecutable()
 	if claudeExec == "" {

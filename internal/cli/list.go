@@ -49,7 +49,7 @@ func runListCmd(verbose bool) error {
 	if err != nil {
 		return fmt.Errorf("failed to load sessions: %w", err)
 	}
-	
+
 	formatter := operations.NewStatusFormat()
 
 	if len(sessions) == 0 {
@@ -207,7 +207,6 @@ func renderVerboseSessionList(sessions []types.Session, formatter *operations.St
 		fmt.Printf("   ⏰ Activity: %s\n", formatter.FormatActivity(session.LastActivity))
 	}
 }
-
 
 func truncate(s string, maxLen int) string {
 	if len(s) <= maxLen {
