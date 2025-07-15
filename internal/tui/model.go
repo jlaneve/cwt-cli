@@ -19,6 +19,11 @@ import (
 // Global logger for debugging
 var debugLogger *log.Logger
 
+// Constants for UI behavior
+const (
+	ScrollAmount = 10 // Number of lines to scroll in diff view
+)
+
 func init() {
 	// Create debug log file
 	logFile, err := os.OpenFile("cwt-tui-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -733,7 +738,7 @@ func (m Model) handleShowDiffMode(sessionID string) (Model, tea.Cmd) {
 		session:      *session,
 		scrollOffset: 0,
 		selectedLine: 0,
-		target:       "main", // default comparison target
+		target:       "origin/main", // default comparison target
 		cached:       false,
 	}
 	m.showDiffMode = true
@@ -768,8 +773,8 @@ func (m Model) handleDiffModeKeys(msg tea.KeyMsg) (Model, tea.Cmd) {
 		return m, m.loadDiffData()
 
 	case "pgup":
-		if m.diffMode.scrollOffset > 10 {
-			m.diffMode.scrollOffset -= 10
+		if m.diffMode.scrollOffset > ScrollAmount {
+			m.diffMode.scrollOffset -= ScrollAmount
 		} else {
 			m.diffMode.scrollOffset = 0
 		}
@@ -780,8 +785,8 @@ func (m Model) handleDiffModeKeys(msg tea.KeyMsg) (Model, tea.Cmd) {
 		if maxScroll < 0 {
 			maxScroll = 0
 		}
-		if m.diffMode.scrollOffset+10 < maxScroll {
-			m.diffMode.scrollOffset += 10
+		if m.diffMode.scrollOffset+ScrollAmount < maxScroll {
+			m.diffMode.scrollOffset += ScrollAmount
 		} else {
 			m.diffMode.scrollOffset = maxScroll
 		}

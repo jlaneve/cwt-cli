@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -12,7 +13,8 @@ func GetCWTCommand() []string {
 	executable, err := os.Executable()
 	if err == nil {
 		// Check if we're running from a temporary directory (go run)
-		if strings.Contains(executable, "go-build") || strings.Contains(executable, "/tmp/") {
+		tempDir := os.TempDir()
+		if strings.Contains(executable, "go-build") || strings.Contains(executable, tempDir) {
 			// We're running via 'go run'
 			return []string{"go", "run", "cmd/cwt/main.go"}
 		}
@@ -52,7 +54,16 @@ func ExecuteCWTCommand(subcommand string, args ...string) error {
 	fullArgs = append(fullArgs, args...)
 
 	cmd := exec.Command(baseCmd[0], fullArgs...)
-	return cmd.Run()
+
+	// Capture both stdout and stderr to provide better error messages
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		if len(output) > 0 {
+			return fmt.Errorf("%s: %w", strings.TrimSpace(string(output)), err)
+		}
+		return err
+	}
+	return nil
 }
 
 // GetCWTExecutablePath returns just the executable path/command for CWT

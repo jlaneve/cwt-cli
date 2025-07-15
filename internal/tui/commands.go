@@ -427,7 +427,13 @@ func (m Model) loadDiffData() tea.Cmd {
 		}
 		defer os.Chdir(originalDir)
 
-		if err := os.Chdir(m.diffMode.session.Core.WorktreePath); err != nil {
+		// Validate that the worktree path is a git repository
+		worktreePath := m.diffMode.session.Core.WorktreePath
+		if _, err := os.Stat(filepath.Join(worktreePath, ".git")); err != nil {
+			return diffErrorMsg{err: fmt.Errorf("not a git repository: %s", worktreePath)}
+		}
+
+		if err := os.Chdir(worktreePath); err != nil {
 			return diffErrorMsg{err: fmt.Errorf("failed to change to worktree directory: %w", err)}
 		}
 
