@@ -2,7 +2,7 @@
 .cwt/
 
 # Go build artifacts
-./cwt
+/cwt
 main
 *.exe
 *.dll

@@ -42,6 +42,36 @@ var (
 	changesStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 	cleanStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 	idleStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+
+	// Diff view styles
+	diffHeaderStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("4")).
+			Margin(0, 0, 1, 0)
+
+	diffAddedStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("2")).
+			Background(lipgloss.Color("22"))
+
+	diffRemovedStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("1")).
+			Background(lipgloss.Color("52"))
+
+	diffContextStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("7"))
+
+	diffFileHeaderStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("5"))
+
+	diffHunkHeaderStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("6"))
+
+	diffLineNumStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("8")).
+			Width(4).
+			Align(lipgloss.Right)
 )
 
 // View renders the entire TUI
@@ -81,6 +111,10 @@ func (m Model) View() string {
 
 	if m.showHelp {
 		return m.renderWithHelp(content)
+	}
+
+	if m.showDiffMode {
+		return m.renderDiffMode()
 	}
 
 	return content
@@ -599,7 +633,7 @@ func sanitizeMessage(msg string) string {
 
 // renderActions renders the action bar at the bottom
 func (m Model) renderActions() string {
-	content := "↑↓: navigate  a/enter: attach  s: switch  m: merge  u: publish  n: new  d: delete  c: cleanup  r: refresh  ?: help  q: quit"
+	content := "↑↓: navigate  a/enter: attach  v: diff  s: switch  m: merge  u: publish  n: new  d: delete  c: cleanup  r: refresh  ?: help  q: quit"
 	return lipgloss.NewStyle().
 		Height(1).
 		Width(m.width).
@@ -664,9 +698,11 @@ func (m Model) renderWithHelp(content string) string {
 Navigation:
   ↑/k       Move up
   ↓/j       Move down
+  Scroll    Mouse wheel scrolling
   Enter/a   Attach to session
   
 Session Actions:
+  v         View diff for session changes
   s         Switch to session branch
   m         Merge session into current branch
   u         Publish session (commit + push)
@@ -678,6 +714,14 @@ Management:
   r         Refresh session list
   ?         Toggle this help
   q         Quit
+
+Diff View (press 'v' on session with changes):
+  ↑↓/jk     Scroll through diff
+  Scroll    Mouse wheel scrolling
+  c         Toggle cached/working tree view
+  r         Refresh diff
+  PgUp/PgDn Fast scroll
+  Esc/q     Return to main view
 
 Session Status:
   🟢 alive    Tmux session running
@@ -840,4 +884,118 @@ func truncateFileName(filename string, maxWidth int) string {
 	suffixLen := maxWidth - 3 - prefixLen
 
 	return filename[:prefixLen] + "..." + filename[len(filename)-suffixLen:]
+}
+
+// renderDiffMode renders the diff view mode
+func (m Model) renderDiffMode() string {
+	if m.diffMode == nil {
+		return "Diff mode not initialized"
+	}
+
+	var lines []string
+
+	// Header
+	header := fmt.Sprintf("📋 Diff View: %s", m.diffMode.session.Core.Name)
+	if m.diffMode.cached {
+		header += " (staged changes)"
+	} else {
+		header += fmt.Sprintf(" (vs %s)", m.diffMode.target)
+	}
+	lines = append(lines, diffHeaderStyle.Render(header))
+
+	// Controls help
+	controls := "↑↓/jk/scroll: navigate  c: cached/working  r: refresh  esc/q: back"
+	lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(controls))
+	lines = append(lines, "")
+
+	// Content area height calculation
+	headerLines := 3 // header + controls + blank
+	contentHeight := m.height - headerLines - 1 // minus 1 for potential bottom margin
+
+	// Render unified diff content
+	contentLines := m.renderDiffUnified(contentHeight)
+	lines = append(lines, contentLines...)
+
+	return strings.Join(lines, "\n")
+}
+
+// renderDiffUnified renders the unified diff view
+func (m Model) renderDiffUnified(maxLines int) []string {
+	if len(m.diffMode.diffLines) == 0 {
+		return []string{"No diff data available"}
+	}
+
+	var lines []string
+	start := m.diffMode.scrollOffset
+	end := start + maxLines
+
+	if end > len(m.diffMode.diffLines) {
+		end = len(m.diffMode.diffLines)
+	}
+
+	for i := start; i < end; i++ {
+		line := m.diffMode.diffLines[i]
+		renderedLine := m.renderDiffLine(line, true)
+		lines = append(lines, renderedLine)
+	}
+
+	// Show scroll indicator if there's more content
+	if m.diffMode.scrollOffset > 0 || end < len(m.diffMode.diffLines) {
+		scrollInfo := fmt.Sprintf("Lines %d-%d of %d", start+1, end, len(m.diffMode.diffLines))
+		lines = append(lines, "")
+		lines = append(lines, lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(scrollInfo))
+	}
+
+	return lines
+}
+
+
+// renderDiffLine renders a single diff line with appropriate styling
+func (m Model) renderDiffLine(line DiffLine, showLineNumbers bool) string {
+	var prefix string
+	var style lipgloss.Style
+	
+	switch line.Type {
+	case DiffLineAdded:
+		prefix = "+"
+		style = diffAddedStyle
+	case DiffLineRemoved:
+		prefix = "-"
+		style = diffRemovedStyle
+	case DiffLineContext:
+		prefix = " "
+		style = diffContextStyle
+	case DiffLineFileHeader:
+		style = diffFileHeaderStyle
+	case DiffLineHunkHeader:
+		style = diffHunkHeaderStyle
+	default:
+		style = diffContextStyle
+	}
+
+	content := line.Content
+	if prefix != "" && len(content) > 0 && content[0] == prefix[0] {
+		// Remove the prefix if it's already in the content
+		content = content[1:]
+	}
+
+	var lineNumStr string
+	if showLineNumbers && line.Type != DiffLineFileHeader && line.Type != DiffLineHeader && line.Type != DiffLineHunkHeader {
+		switch line.Type {
+		case DiffLineAdded:
+			lineNumStr = diffLineNumStyle.Render(fmt.Sprintf("%d", line.NewLine))
+		case DiffLineRemoved:
+			lineNumStr = diffLineNumStyle.Render(fmt.Sprintf("%d", line.OldLine))
+		case DiffLineContext:
+			lineNumStr = diffLineNumStyle.Render(fmt.Sprintf("%d", line.OldLine))
+		default:
+			lineNumStr = diffLineNumStyle.Render(" ")
+		}
+	}
+
+	if lineNumStr != "" {
+		return lineNumStr + " " + prefix + style.Render(content)
+	}
+	
+	return prefix + style.Render(content)
 }

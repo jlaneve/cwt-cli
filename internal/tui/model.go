@@ -13,6 +13,7 @@ import (
 
 	"github.com/jlaneve/cwt-cli/internal/state"
 	"github.com/jlaneve/cwt-cli/internal/types"
+	"github.com/jlaneve/cwt-cli/internal/utils"
 )
 
 // Global logger for debugging
@@ -52,6 +53,10 @@ type Model struct {
 
 	// Event channel for file watching
 	eventChan chan tea.Msg
+
+	// Diff mode state
+	diffMode     *DiffMode
+	showDiffMode bool
 }
 
 // ConfirmDialog represents a yes/no confirmation dialog
@@ -66,6 +71,40 @@ type NewSessionDialog struct {
 	NameInput string
 	Error     string
 }
+
+// DiffMode represents the diff viewer state
+type DiffMode struct {
+	session      types.Session
+	diffLines    []DiffLine
+	scrollOffset int
+	selectedLine int
+	target       string // comparison target (branch)
+	cached       bool   // show staged changes only
+}
+
+// DiffLine represents a single line in the diff view
+type DiffLine struct {
+	Type     DiffLineType
+	Content  string
+	OldLine  int
+	NewLine  int
+	HunkID   int
+	FileName string
+}
+
+// DiffLineType represents the type of diff line
+type DiffLineType int
+
+const (
+	DiffLineContext DiffLineType = iota
+	DiffLineAdded
+	DiffLineRemoved
+	DiffLineHeader
+	DiffLineFileHeader
+	DiffLineHunkHeader
+	DiffLineNoNewline
+)
+
 
 // Event messages for BubbleTea
 type (
@@ -121,6 +160,14 @@ type (
 
 	// File watcher setup
 	fileWatcherSetupMsg struct{ watcher *fsnotify.Watcher }
+
+	// Diff mode events
+	showDiffModeMsg   struct{ sessionID string }
+	hideDiffModeMsg   struct{}
+	diffLoadedMsg     struct{ diffLines []DiffLine }
+	diffErrorMsg      struct{ err error }
+	diffScrollUpMsg   struct{}
+	diffScrollDownMsg struct{}
 )
 
 // NewModel creates a new TUI model
@@ -161,6 +208,7 @@ func NewModel(stateManager *state.Manager) (*Model, error) {
 // Init initializes the TUI model with necessary setup
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
+		tea.EnableMouseCellMotion, // Enable mouse support including scroll events
 		m.setupFileWatching(),
 		m.startEventChannelListener(),
 		m.startGitPolling(),
@@ -179,6 +227,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
+
+	case tea.MouseMsg:
+		return m.handleMouseEvent(msg)
 
 	case refreshCompleteMsg:
 		// Store old sessions to detect new ones
@@ -330,6 +381,32 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Store the file watcher in the model
 		m.fileWatcher = msg.watcher
 		return m, m.startEventChannelListener()
+
+	case showDiffModeMsg:
+		return m.handleShowDiffMode(msg.sessionID)
+
+	case hideDiffModeMsg:
+		m.showDiffMode = false
+		m.diffMode = nil
+		return m, nil
+
+	case diffLoadedMsg:
+		if m.diffMode != nil {
+			m.diffMode.diffLines = msg.diffLines
+		}
+		return m, nil
+
+	case diffErrorMsg:
+		m.lastError = fmt.Sprintf("Diff error: %s", msg.err.Error())
+		return m, tea.Tick(3*time.Second, func(time.Time) tea.Msg {
+			return clearErrorMsg{}
+		})
+
+	case diffScrollUpMsg:
+		return m.handleDiffScrollUp()
+
+	case diffScrollDownMsg:
+		return m.handleDiffScrollDown()
 	}
 
 	return m, nil
@@ -376,6 +453,11 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 			m.showHelp = false
 		}
 		return m, nil
+	}
+
+	// Handle diff mode
+	if m.showDiffMode {
+		return m.handleDiffModeKeys(msg)
 	}
 
 	// Handle action keys first (before table navigation)
@@ -491,6 +573,23 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case "v":
+		// View diff for selected session
+		if len(m.sessions) > 0 {
+			sessionID := m.getSelectedSessionID()
+			if sessionID != "" {
+				session := m.findSession(sessionID)
+				if session != nil && session.GitStatus.HasChanges {
+					return m, func() tea.Msg { return showDiffModeMsg{sessionID: sessionID} }
+				}
+				m.lastError = "Session has no changes to view"
+				return m, tea.Tick(3*time.Second, func(time.Time) tea.Msg {
+					return clearErrorMsg{}
+				})
+			}
+		}
+		return m, nil
+
 	case "t":
 		// Toggle between detailed/compact view (placeholder for now)
 		return m, nil
@@ -513,6 +612,42 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 			m.selectedIndex++
 		}
 		return m, nil
+	}
+
+	return m, nil
+}
+
+// handleMouseEvent processes mouse input including scroll events
+func (m Model) handleMouseEvent(msg tea.MouseMsg) (Model, tea.Cmd) {
+	// Handle scroll events in diff mode
+	if m.showDiffMode && m.diffMode != nil {
+		switch msg.Type {
+		case tea.MouseWheelUp:
+			// Scroll up in diff view
+			return m.handleDiffScrollUp()
+		case tea.MouseWheelDown:
+			// Scroll down in diff view
+			return m.handleDiffScrollDown()
+		}
+	}
+
+	// Handle scroll events in main session list (optional enhancement)
+	if !m.showDiffMode && !m.showHelp && m.confirmDialog == nil && m.newSessionDialog == nil {
+		switch msg.Type {
+		case tea.MouseWheelUp:
+			// Scroll up in session list
+			if m.selectedIndex > 0 {
+				m.selectedIndex--
+			}
+			return m, nil
+		case tea.MouseWheelDown:
+			// Scroll down in session list
+			totalItems := len(m.sessions) + len(m.creatingSessions)
+			if m.selectedIndex < totalItems-1 {
+				m.selectedIndex++
+			}
+			return m, nil
+		}
 	}
 
 	return m, nil
@@ -577,6 +712,108 @@ func (m Model) findSession(sessionID string) *types.Session {
 	}
 	return nil
 }
+
+// handleShowDiffMode initializes diff mode for a session
+func (m Model) handleShowDiffMode(sessionID string) (Model, tea.Cmd) {
+	session := m.findSession(sessionID)
+	if session == nil {
+		m.lastError = "Session not found"
+		return m, tea.Tick(3*time.Second, func(time.Time) tea.Msg {
+			return clearErrorMsg{}
+		})
+	}
+
+	if !session.GitStatus.HasChanges {
+		m.lastError = "Session has no changes to view"
+		return m, tea.Tick(3*time.Second, func(time.Time) tea.Msg {
+			return clearErrorMsg{}
+		})
+	}
+
+	m.diffMode = &DiffMode{
+		session:      *session,
+		scrollOffset: 0,
+		selectedLine: 0,
+		target:       "main", // default comparison target
+		cached:       false,
+	}
+	m.showDiffMode = true
+
+	// Load the diff data
+	return m, m.loadDiffData()
+}
+
+// handleDiffModeKeys handles keyboard input in diff mode
+func (m Model) handleDiffModeKeys(msg tea.KeyMsg) (Model, tea.Cmd) {
+	if m.diffMode == nil {
+		return m, nil
+	}
+
+	switch msg.String() {
+	case "esc", "q":
+		return m, func() tea.Msg { return hideDiffModeMsg{} }
+
+	case "up", "k":
+		return m, func() tea.Msg { return diffScrollUpMsg{} }
+
+	case "down", "j":
+		return m, func() tea.Msg { return diffScrollDownMsg{} }
+
+	case "r":
+		// Refresh diff
+		return m, m.loadDiffData()
+
+	case "c":
+		// Toggle cached/working tree view
+		m.diffMode.cached = !m.diffMode.cached
+		return m, m.loadDiffData()
+
+	case "pgup":
+		if m.diffMode.scrollOffset > 10 {
+			m.diffMode.scrollOffset -= 10
+		} else {
+			m.diffMode.scrollOffset = 0
+		}
+		return m, nil
+
+	case "pgdn":
+		maxScroll := len(m.diffMode.diffLines) - (m.height - 6)
+		if maxScroll < 0 {
+			maxScroll = 0
+		}
+		if m.diffMode.scrollOffset+10 < maxScroll {
+			m.diffMode.scrollOffset += 10
+		} else {
+			m.diffMode.scrollOffset = maxScroll
+		}
+		return m, nil
+	}
+
+	return m, nil
+}
+
+// handleDiffScrollUp scrolls up in diff view
+func (m Model) handleDiffScrollUp() (Model, tea.Cmd) {
+	if m.diffMode != nil && m.diffMode.scrollOffset > 0 {
+		m.diffMode.scrollOffset--
+	}
+	return m, nil
+}
+
+// handleDiffScrollDown scrolls down in diff view
+func (m Model) handleDiffScrollDown() (Model, tea.Cmd) {
+	if m.diffMode != nil {
+		maxScroll := len(m.diffMode.diffLines) - (m.height - 6)
+		if maxScroll < 0 {
+			maxScroll = 0
+		}
+		if m.diffMode.scrollOffset < maxScroll {
+			m.diffMode.scrollOffset++
+		}
+	}
+	return m, nil
+}
+
 
 // handleShowConfirmDialog sets up a confirmation dialog
 func (m Model) handleShowConfirmDialog(msg showConfirmDialogMsg) (Model, tea.Cmd) {
@@ -704,7 +941,7 @@ func (m Model) switchToSessionBranch(sessionID string) tea.Cmd {
 			onYes: func() tea.Cmd {
 				return func() tea.Msg {
 					// Execute cwt switch command
-					if err := executeCommand("cwt", "switch", session.Core.Name); err != nil {
+					if err := utils.ExecuteCWTCommand("switch", session.Core.Name); err != nil {
 						return errorMsg{err: fmt.Errorf("failed to switch: %w", err)}
 					}
 					m.successMessage = fmt.Sprintf("Switched to session '%s' branch", session.Core.Name)
@@ -734,7 +971,7 @@ func (m Model) mergeSessionChanges(sessionID string) tea.Cmd {
 			onYes: func() tea.Cmd {
 				return func() tea.Msg {
 					// Execute cwt merge command
-					if err := executeCommand("cwt", "merge", session.Core.Name); err != nil {
+					if err := utils.ExecuteCWTCommand("merge", session.Core.Name); err != nil {
 						return errorMsg{err: fmt.Errorf("failed to merge: %w", err)}
 					}
 					m.successMessage = fmt.Sprintf("Merged session '%s'", session.Core.Name)
@@ -764,7 +1001,7 @@ func (m Model) publishSession(sessionID string) tea.Cmd {
 			onYes: func() tea.Cmd {
 				return func() tea.Msg {
 					// Execute cwt publish command
-					if err := executeCommand("cwt", "publish", session.Core.Name); err != nil {
+					if err := utils.ExecuteCWTCommand("publish", session.Core.Name); err != nil {
 						return errorMsg{err: fmt.Errorf("failed to publish: %w", err)}
 					}
 					m.successMessage = fmt.Sprintf("Published session '%s'", session.Core.Name)
@@ -775,6 +1012,7 @@ func (m Model) publishSession(sessionID string) tea.Cmd {
 		}
 	}
 }
+
 
 // executeCommand executes a shell command
 func executeCommand(command string, args ...string) error {
