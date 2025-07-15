@@ -195,6 +195,43 @@ sudo mv cwt /usr/local/bin/
 3. **State Tracking**: CWT monitors session status and git changes
 4. **TUI Interface**: Real-time dashboard built with terminal UI components
 
+## Development
+
+### Setting Up Pre-commit Hooks
+
+This project uses pre-commit hooks to catch linting and formatting issues before they reach CI:
+
+```bash
+# Install pre-commit (one-time setup)
+pip install pre-commit
+
+# Install the git hook scripts
+pre-commit install
+
+# (Optional) Run hooks on all files
+pre-commit run --all-files
+```
+
+### Available Make Targets
+
+```bash
+make help      # Show available targets
+make test      # Run tests
+make build     # Build binary
+make lint      # Run golangci-lint (requires installation)
+make clean     # Clean build artifacts
+```
+
+### Pre-commit Hooks
+
+The pre-commit configuration includes:
+- **gofmt**: Code formatting
+- **goimports**: Import organization 
+- **go mod tidy**: Dependency management
+- **go vet**: Basic linting
+- **golangci-lint**: Enhanced linting (see `.golangci.yml`)
+- **General checks**: trailing whitespace, file endings, YAML/JSON validation
+
 ## Contributing
 
 See [workflows.md](workflows.md) for detailed workflow documentation.
