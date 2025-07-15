@@ -2,10 +2,7 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -103,24 +100,8 @@ func runAttachCmd(cmd *cobra.Command, args []string) error {
 		fmt.Printf("✅ Session '%s' recreated successfully\n", sessionToAttach.Core.Name)
 	}
 
-	// Attach to tmux session
-	fmt.Printf("🔗 Attaching to session '%s' (tmux: %s)...\n",
-		sessionToAttach.Core.Name, sessionToAttach.Core.TmuxSession)
-
-	// Use exec to replace current process with tmux attach
-	tmuxPath, err := exec.LookPath("tmux")
-	if err != nil {
-		return fmt.Errorf("tmux not found in PATH: %w", err)
-	}
-
-	args = []string{"tmux", "attach-session", "-t", sessionToAttach.Core.TmuxSession}
-	err = syscall.Exec(tmuxPath, args, os.Environ())
-	if err != nil {
-		return fmt.Errorf("failed to exec tmux: %w", err)
-	}
-
-	// This point should never be reached if exec succeeds
-	return nil
+	// Attach to tmux session using shared operations function
+	return operations.AttachToTmuxSession(sessionToAttach.Core.Name, sessionToAttach.Core.TmuxSession)
 }
 
 func promptForAttachSelection(sessions []types.Session) (*types.Session, error) {
