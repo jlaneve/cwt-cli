@@ -64,4 +64,3 @@ func GetCWTExecutablePath() string {
 	// For go run, return the full command as a string
 	return strings.Join(cmd, " ")
 }
-
