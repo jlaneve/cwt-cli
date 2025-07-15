@@ -218,7 +218,7 @@ pre-commit run --all-files
 make help      # Show available targets
 make test      # Run tests
 make build     # Build binary
-make lint      # Run golangci-lint (requires installation)
+make lint      # Run basic linting
 make clean     # Clean build artifacts
 ```
 
@@ -229,7 +229,6 @@ The pre-commit configuration includes:
 - **goimports**: Import organization 
 - **go mod tidy**: Dependency management
 - **go vet**: Basic linting
-- **golangci-lint**: Enhanced linting (see `.golangci.yml`)
 - **General checks**: trailing whitespace, file endings, YAML/JSON validation
 
 ## Contributing
