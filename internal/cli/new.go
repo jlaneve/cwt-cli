@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -55,14 +57,12 @@ func runNewCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Success message
-	fmt.Printf("✅ Session '%s' created successfully!\n\n", sessionName)
-	fmt.Printf("Next steps:\n")
-	fmt.Printf("  • View all sessions: cwt list\n")
-	fmt.Printf("  • Attach to session: cwt attach %s\n", sessionName)
-	fmt.Printf("  • Open TUI dashboard: cwt tui\n")
-	fmt.Printf("  • Work in isolated directory: cd %s/worktrees/%s\n", dataDir, sessionName)
+	fmt.Printf("✅ Session '%s' created successfully!\n", sessionName)
+	fmt.Printf("🔗 Attaching to session...\n")
 
-	return nil
+	// Attach to the newly created session
+	tmuxSessionName := fmt.Sprintf("cwt-%s", sessionName)
+	return attachToTmuxSession(tmuxSessionName)
 }
 
 func promptForSessionName() (string, error) {
@@ -83,4 +83,23 @@ func promptForSessionName() (string, error) {
 
 		return sessionName, nil
 	}
+}
+
+// attachToTmuxSession attaches to the specified tmux session using exec
+func attachToTmuxSession(tmuxSessionName string) error {
+	// Find tmux in PATH
+	tmuxPath, err := exec.LookPath("tmux")
+	if err != nil {
+		return fmt.Errorf("tmux not found in PATH: %w", err)
+	}
+
+	// Use exec to replace current process with tmux attach
+	args := []string{"tmux", "attach-session", "-t", tmuxSessionName}
+	err = syscall.Exec(tmuxPath, args, os.Environ())
+	if err != nil {
+		return fmt.Errorf("failed to exec tmux: %w", err)
+	}
+
+	// This point should never be reached if exec succeeds
+	return nil
 }
