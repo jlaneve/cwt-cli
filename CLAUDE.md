@@ -68,7 +68,7 @@ The SessionManager maintains an in-memory map of sessions, synchronized with:
 
 ### Available Commands
 ```bash
-cwt new [session-name] [task-description]  # Create new session  
+cwt new [session-name]                     # Create new session  
 cwt new                                     # Interactive session creation
 cwt cleanup                                 # Remove orphaned sessions/worktrees
 cwt --help                                  # Show available commands
@@ -122,7 +122,7 @@ The SessionManager centralizes all session operations:
 ### Build and Run
 ```bash
 # Run directly from source
-go run cmd/cwt/main.go new "session-name" "task description"
+go run cmd/cwt/main.go new "session-name"
 go run cmd/cwt/main.go cleanup
 
 # Build binary
@@ -135,7 +135,7 @@ go mod tidy
 ### Testing
 ```bash
 # Test basic functionality
-go run cmd/cwt/main.go new test-session "Test description"
+go run cmd/cwt/main.go new test-session
 tmux list-sessions | grep cwt    # Verify tmux session created
 git worktree list               # Verify git worktree created
 
@@ -143,7 +143,7 @@ git worktree list               # Verify git worktree created
 go run cmd/cwt/main.go cleanup
 
 # Test error scenarios
-go run cmd/cwt/main.go new test-session "Duplicate test"  # Should fail
+go run cmd/cwt/main.go new test-session  # Should fail if duplicate
 ```
 
 ### Debugging Session State

@@ -1,6 +1,9 @@
 # CWT runtime data
 .cwt/
 
+# Claude Code directory
+.claude/
+
 # Go build artifacts
 ./cwt
 main
