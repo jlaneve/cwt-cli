@@ -255,3 +255,40 @@ func TestSessionOperations_RecreateDeadSession(t *testing.T) {
 		t.Errorf("Expected 2 tmux sessions created, got %d", len(tmuxChecker.CreatedSessions))
 	}
 }
+
+func TestIsValidExecutablePath(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{"valid path", "/usr/local/bin/claude", true},
+		{"valid relative path", "claude", true},
+		{"valid home expansion", "$HOME/.claude/local/claude", true},
+		{"directory traversal", "../../../etc/passwd", false},
+		{"null byte", "/usr/bin/claude\x00", false},
+		{"semicolon injection", "/usr/bin/claude;rm -rf /", false},
+		{"ampersand injection", "/usr/bin/claude&whoami", false},
+		{"pipe injection", "/usr/bin/claude|cat /etc/passwd", false},
+		{"backtick injection", "/usr/bin/claude`whoami`", false},
+		{"parentheses injection", "/usr/bin/claude(whoami)", false},
+		{"braces injection", "/usr/bin/claude{whoami}", false},
+		{"brackets injection", "/usr/bin/claude[whoami]", false},
+		{"asterisk", "/usr/bin/claude*", false},
+		{"question mark", "/usr/bin/claude?", false},
+		{"less than", "/usr/bin/claude<file", false},
+		{"greater than", "/usr/bin/claude>file", false},
+		{"tilde", "/usr/bin/claude~", false},
+		{"dollar in middle", "/usr/bin/clau$de", false},
+		{"home at start is ok", "$HOME/bin/claude", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isValidExecutablePath(tt.input)
+			if result != tt.expected {
+				t.Errorf("isValidExecutablePath(%q) = %v, expected %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}

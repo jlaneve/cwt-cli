@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/jlaneve/cwt-cli/internal/state"
 	"github.com/jlaneve/cwt-cli/internal/types"
@@ -99,10 +100,38 @@ func FindClaudeExecutable() string {
 	}
 
 	for _, path := range claudePaths {
+		// Security: Validate expanded paths to prevent directory traversal
+		if !isValidExecutablePath(path) {
+			continue
+		}
 		if _, err := exec.LookPath(path); err == nil {
 			return path
 		}
 	}
 
 	return ""
+}
+
+// isValidExecutablePath validates that a path is safe to use as an executable
+func isValidExecutablePath(path string) bool {
+	// Reject paths with directory traversal patterns
+	if strings.Contains(path, "..") {
+		return false
+	}
+	// Reject paths with null bytes
+	if strings.Contains(path, "\x00") {
+		return false
+	}
+	// Reject paths with shell metacharacters (except legitimate path separators)
+	dangerousChars := []string{";", "&", "|", "$", "`", "(", ")", "{", "}", "[", "]", "*", "?", "<", ">", "~"}
+	for _, char := range dangerousChars {
+		if strings.Contains(path, char) {
+			// Allow $HOME in environment expansion, but only at the start
+			if char == "$" && strings.HasPrefix(path, "$HOME") {
+				continue
+			}
+			return false
+		}
+	}
+	return true
 }

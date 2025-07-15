@@ -196,3 +196,71 @@ func TestCleanupOperations_CleanupStats(t *testing.T) {
 		t.Errorf("Expected total found = 3, got %d", totalFound)
 	}
 }
+
+func TestIsValidWorktreeName(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{"valid name", "valid-session", true},
+		{"valid with underscore", "valid_session", true},
+		{"valid with numbers", "session123", true},
+		{"empty name", "", false},
+		{"directory traversal", "../etc/passwd", false},
+		{"null byte", "session\x00name", false},
+		{"semicolon injection", "session;rm -rf /", false},
+		{"ampersand injection", "session&whoami", false},
+		{"pipe injection", "session|cat /etc/passwd", false},
+		{"dollar injection", "session$USER", false},
+		{"backtick injection", "session`whoami`", false},
+		{"parentheses injection", "session(whoami)", false},
+		{"braces injection", "session{whoami}", false},
+		{"brackets injection", "session[whoami]", false},
+		{"asterisk", "session*", false},
+		{"question mark", "session?", false},
+		{"less than", "session<file", false},
+		{"greater than", "session>file", false},
+		{"tilde", "session~", false},
+		{"space", "session name", false},
+		{"tab", "session\tname", false},
+		{"newline", "session\nname", false},
+		{"carriage return", "session\rname", false},
+		{"starts with dash", "-session", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isValidWorktreeName(tt.input)
+			if result != tt.expected {
+				t.Errorf("isValidWorktreeName(%q) = %v, expected %v", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestIsPathWithinDataDir(t *testing.T) {
+	dataDir := "/home/user/.cwt"
+
+	tests := []struct {
+		name     string
+		path     string
+		expected bool
+	}{
+		{"valid worktree path", "/home/user/.cwt/worktrees/session1", true},
+		{"worktrees directory itself", "/home/user/.cwt/worktrees", true},
+		{"path outside data dir", "/etc/passwd", false},
+		{"directory traversal", "/home/user/.cwt/worktrees/../../../etc/passwd", false},
+		{"relative path traversal", "/home/user/.cwt/worktrees/../../etc/passwd", false},
+		{"path not in worktrees", "/home/user/.cwt/sessions.json", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isPathWithinDataDir(tt.path, dataDir)
+			if result != tt.expected {
+				t.Errorf("isPathWithinDataDir(%q, %q) = %v, expected %v", tt.path, dataDir, result, tt.expected)
+			}
+		})
+	}
+}

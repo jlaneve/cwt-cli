@@ -187,7 +187,17 @@ func (c *CleanupOperations) killTmuxSession(sessionName string) error {
 
 // removeWorktree removes a git worktree
 func (c *CleanupOperations) removeWorktree(name string) error {
+	// Security: Validate worktree name to prevent command injection
+	if !isValidWorktreeName(name) {
+		return fmt.Errorf("invalid worktree name: %s", name)
+	}
+
 	worktreePath := filepath.Join(c.stateManager.GetDataDir(), "worktrees", name)
+
+	// Security: Validate that the path is within our data directory
+	if !isPathWithinDataDir(worktreePath, c.stateManager.GetDataDir()) {
+		return fmt.Errorf("worktree path outside data directory: %s", worktreePath)
+	}
 
 	// Use git worktree remove command
 	cmd := exec.Command("git", "worktree", "remove", worktreePath)
@@ -201,4 +211,45 @@ func (c *CleanupOperations) removeWorktree(name string) error {
 	}
 
 	return nil
+}
+
+// isValidWorktreeName validates that a worktree name is safe
+func isValidWorktreeName(name string) bool {
+	// Reject empty names
+	if name == "" {
+		return false
+	}
+	// Reject paths with directory traversal patterns
+	if strings.Contains(name, "..") {
+		return false
+	}
+	// Reject paths with null bytes
+	if strings.Contains(name, "\x00") {
+		return false
+	}
+	// Reject names with shell metacharacters
+	dangerousChars := []string{";", "&", "|", "$", "`", "(", ")", "{", "}", "[", "]", "*", "?", "<", ">", "~", " ", "\t", "\n", "\r"}
+	for _, char := range dangerousChars {
+		if strings.Contains(name, char) {
+			return false
+		}
+	}
+	// Reject names starting with dash (could be interpreted as flags)
+	if strings.HasPrefix(name, "-") {
+		return false
+	}
+	return true
+}
+
+// isPathWithinDataDir validates that a path is within the expected data directory
+func isPathWithinDataDir(path, dataDir string) bool {
+	// Clean and resolve both paths
+	cleanPath := filepath.Clean(path)
+	cleanDataDir := filepath.Clean(dataDir)
+
+	// Make sure the path starts with the data directory
+	expectedPrefix := filepath.Join(cleanDataDir, "worktrees") + string(filepath.Separator)
+	cleanPathWithSep := cleanPath + string(filepath.Separator)
+
+	return strings.HasPrefix(cleanPathWithSep, expectedPrefix) || cleanPath == filepath.Join(cleanDataDir, "worktrees")
 }
