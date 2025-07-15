@@ -55,14 +55,11 @@ func runNewCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Success message
-	fmt.Printf("✅ Session '%s' created successfully!\n\n", sessionName)
-	fmt.Printf("Next steps:\n")
-	fmt.Printf("  • View all sessions: cwt list\n")
-	fmt.Printf("  • Attach to session: cwt attach %s\n", sessionName)
-	fmt.Printf("  • Open TUI dashboard: cwt tui\n")
-	fmt.Printf("  • Work in isolated directory: cd %s/worktrees/%s\n", dataDir, sessionName)
+	fmt.Printf("✅ Session '%s' created successfully!\n", sessionName)
 
-	return nil
+	// Attach to the newly created session
+	tmuxSessionName := fmt.Sprintf("cwt-%s", sessionName)
+	return operations.AttachToTmuxSession(sessionName, tmuxSessionName)
 }
 
 func promptForSessionName() (string, error) {
