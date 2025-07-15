@@ -338,7 +338,7 @@ func (m *Manager) createExternalResources(core types.CoreSession) error {
 	// Create tmux session
 	// Check if claude is available, otherwise create session without it
 	var command string
-	if claudeExec := m.findClaudeExecutable(); claudeExec != "" {
+	if claudeExec := findClaudeExecutable(); claudeExec != "" {
 		command = claudeExec
 	}
 
@@ -493,8 +493,7 @@ func (m *Manager) getCwtExecutablePath() string {
 }
 
 // findClaudeExecutable searches for claude in common installation paths
-func (m *Manager) findClaudeExecutable() string {
-	// Check common installation paths
+func findClaudeExecutable() string {
 	claudePaths := []string{
 		"claude",
 		os.ExpandEnv("$HOME/.claude/local/claude"),
@@ -511,6 +510,7 @@ func (m *Manager) findClaudeExecutable() string {
 
 	return ""
 }
+
 
 // GetDataDir returns the data directory path
 func (m *Manager) GetDataDir() string {

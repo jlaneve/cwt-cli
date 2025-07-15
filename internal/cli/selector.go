@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/jlaneve/cwt-cli/internal/operations"
 	"github.com/jlaneve/cwt-cli/internal/types"
 )
 
@@ -114,7 +115,8 @@ func selectSessionFallback(sessions []types.Session, title string) (*types.Sessi
 
 	for i, session := range sessions {
 		status := getSessionStatusIndicator(session)
-		activity := FormatActivity(session.LastActivity)
+		formatter := operations.NewStatusFormat()
+		activity := formatter.FormatActivity(session.LastActivity)
 		fmt.Printf("  %d. %s %s (%s)\n", i+1, session.Core.Name, status, activity)
 	}
 
@@ -198,7 +200,8 @@ func (m *sessionSelectorModel) View() string {
 
 		// Session info
 		status := getSessionStatusIndicator(session)
-		activity := FormatActivity(session.LastActivity)
+		formatter := operations.NewStatusFormat()
+		activity := formatter.FormatActivity(session.LastActivity)
 
 		line := fmt.Sprintf("%s%s %s (%s)",
 			prefix,

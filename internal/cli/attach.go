@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jlaneve/cwt-cli/internal/operations"
 	"github.com/jlaneve/cwt-cli/internal/state"
 	"github.com/jlaneve/cwt-cli/internal/types"
 )
@@ -165,46 +166,15 @@ func promptForAttachSelection(sessions []types.Session) (*types.Session, error) 
 
 // recreateSessionWithClaudeResume recreates a dead tmux session and resumes Claude if possible
 func recreateSessionWithClaudeResume(sm *state.Manager, session *types.Session) error {
-	// Find Claude executable
-	claudeExec := findClaudeExecutable()
-	if claudeExec == "" {
-		return fmt.Errorf("claude executable not found")
-	}
-
-	// Check if there's an existing Claude session to resume for this worktree
-	var command string
-	if existingSessionID, err := sm.GetClaudeChecker().FindSessionID(session.Core.WorktreePath); err == nil && existingSessionID != "" {
-		command = fmt.Sprintf("%s -r %s", claudeExec, existingSessionID)
-		fmt.Printf("📋 Resuming Claude session %s\n", existingSessionID)
-	} else {
-		command = claudeExec
-		fmt.Printf("🆕 Starting new Claude session\n")
-	}
-
-	// Recreate the tmux session
-	tmuxChecker := sm.GetTmuxChecker()
-	if err := tmuxChecker.CreateSession(session.Core.TmuxSession, session.Core.WorktreePath, command); err != nil {
-		return fmt.Errorf("failed to recreate tmux session: %w", err)
+	sessionOps := operations.NewSessionOperations(sm)
+	
+	// Use operations layer for recreation logic
+	fmt.Printf("📋 Recreating session with Claude resume...\n")
+	
+	if err := sessionOps.RecreateDeadSession(session); err != nil {
+		return fmt.Errorf("failed to recreate session: %w", err)
 	}
 
 	return nil
 }
 
-// findClaudeExecutable searches for claude in common installation paths
-func findClaudeExecutable() string {
-	claudePaths := []string{
-		"claude",
-		os.ExpandEnv("$HOME/.claude/local/claude"),
-		os.ExpandEnv("$HOME/.claude/local/node_modules/.bin/claude"),
-		"/usr/local/bin/claude",
-	}
-
-	for _, path := range claudePaths {
-		cmd := exec.Command(path, "--version")
-		if err := cmd.Run(); err == nil {
-			return path
-		}
-	}
-
-	return ""
-}

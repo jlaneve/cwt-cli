@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/jlaneve/cwt-cli/internal/operations"
 )
 
 func newNewCmd() *cobra.Command {
@@ -44,10 +46,11 @@ func runNewCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Create session
+	// Create session using operations layer
 	fmt.Printf("Creating session '%s'...\n", sessionName)
 
-	if err := sm.CreateSession(sessionName); err != nil {
+	sessionOps := operations.NewSessionOperations(sm)
+	if err := sessionOps.CreateSession(sessionName); err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
 	}
 
