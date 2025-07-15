@@ -54,8 +54,3 @@ jobs:
 
       - name: Run tests with coverage
         run: go test -v -coverprofile=coverage.out ./...
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.out
