@@ -1,0 +1,35 @@
+# CWT runtime data
+.cwt/
+
+# Go build artifacts
+cwt
+main
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of go coverage tool
+*.out
+
+# Go workspace file
+go.work
+go.work.sum
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Debug and temporary files
+*.log
+cwt-tui-debug.log
+
+# OS files
+.DS_Store
+Thumbs.db
