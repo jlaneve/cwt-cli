@@ -85,12 +85,24 @@ func promptForSessionName() (string, error) {
 	}
 }
 
-// attachToTmuxSession attaches to the specified tmux session using exec
+// attachToTmuxSession attaches to the specified tmux session using exec.
+// This function replaces the current process with tmux attach-session,
+// so no code after the syscall.Exec call will execute.
 func attachToTmuxSession(tmuxSessionName string) error {
+	// Validate input
+	if tmuxSessionName == "" {
+		return fmt.Errorf("tmux session name cannot be empty")
+	}
+
 	// Find tmux in PATH
 	tmuxPath, err := exec.LookPath("tmux")
 	if err != nil {
 		return fmt.Errorf("tmux not found in PATH: %w", err)
+	}
+
+	// Verify session exists before attempting attach
+	if err := verifyTmuxSessionExists(tmuxSessionName); err != nil {
+		return fmt.Errorf("tmux session not found: %w", err)
 	}
 
 	// Use exec to replace current process with tmux attach
@@ -101,5 +113,14 @@ func attachToTmuxSession(tmuxSessionName string) error {
 	}
 
 	// This point should never be reached if exec succeeds
+	panic("syscall.Exec returned unexpectedly")
+}
+
+// verifyTmuxSessionExists checks if the specified tmux session exists
+func verifyTmuxSessionExists(sessionName string) error {
+	cmd := exec.Command("tmux", "has-session", "-t", sessionName)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("session '%s' does not exist", sessionName)
+	}
 	return nil
 }
