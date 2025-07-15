@@ -12,7 +12,7 @@ func TestRealChecker_IsSessionAlive(t *testing.T) {
 	}
 
 	checker := NewRealChecker()
-	
+
 	// Test with non-existent session (should return false)
 	alive := checker.IsSessionAlive("non-existent-session-12345")
 	if alive {

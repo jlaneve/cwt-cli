@@ -62,7 +62,7 @@ func (m Model) setupFileWatching() tea.Cmd {
 
 		// Store the eventChan in the watcher context
 		eventChan := m.eventChan
-		
+
 		// Start listening for file events
 		go func() {
 			for {
@@ -71,12 +71,12 @@ func (m Model) setupFileWatching() tea.Cmd {
 					if !ok {
 						return
 					}
-					
+
 					// Debug logging for file events
 					if debugLogger != nil {
 						debugLogger.Printf("File event: %s %s", event.Op, event.Name)
 					}
-					
+
 					// Determine event type based on file path and send appropriate message
 					if filepath.Base(filepath.Dir(event.Name)) == "session-state" {
 						// Session state change (hook event)
@@ -224,7 +224,7 @@ func (m Model) handleAttach(sessionID string) tea.Cmd {
 		if debugLogger != nil {
 			debugLogger.Printf("handleAttach: Called with sessionID: %s", sessionID)
 		}
-		
+
 		session := m.findSession(sessionID)
 		if session == nil {
 			if debugLogger != nil {
@@ -289,8 +289,8 @@ func (m Model) recreateAndAttach(sessionID string) tea.Cmd {
 
 		// Create new tmux session
 		if err := m.stateManager.GetTmuxChecker().CreateSession(
-			session.Core.TmuxSession, 
-			session.Core.WorktreePath, 
+			session.Core.TmuxSession,
+			session.Core.WorktreePath,
 			command,
 		); err != nil {
 			return errorMsg{err: fmt.Errorf("failed to recreate tmux session: %w", err)}
@@ -306,7 +306,7 @@ func (m Model) attachToSession(sessionID string) tea.Cmd {
 		if debugLogger != nil {
 			debugLogger.Printf("attachToSession: Called with sessionID: %s", sessionID)
 		}
-		
+
 		session := m.findSession(sessionID)
 		if session == nil {
 			if debugLogger != nil {
@@ -318,7 +318,7 @@ func (m Model) attachToSession(sessionID string) tea.Cmd {
 		if debugLogger != nil {
 			debugLogger.Printf("attachToSession: Returning attachRequestMsg for tmux session: %s", session.Core.TmuxSession)
 		}
-		
+
 		// Return a special message that tells the TUI to exit and attach
 		return attachRequestMsg{sessionName: session.Core.TmuxSession}
 	}
@@ -390,7 +390,6 @@ func (m Model) runCleanup() tea.Cmd {
 	}
 }
 
-
 // findClaudeExecutable searches for claude in common installation paths
 func (m Model) findClaudeExecutable() string {
 	// Check common installation paths
@@ -400,13 +399,13 @@ func (m Model) findClaudeExecutable() string {
 		os.ExpandEnv("$HOME/.claude/local/node_modules/.bin/claude"),
 		"/usr/local/bin/claude",
 	}
-	
+
 	for _, path := range claudePaths {
 		cmd := exec.Command(path, "--version")
 		if err := cmd.Run(); err == nil {
 			return path
 		}
 	}
-	
+
 	return ""
 }

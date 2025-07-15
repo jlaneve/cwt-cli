@@ -18,11 +18,11 @@ type CoreSession struct {
 // Session represents the complete session state with both persistent
 // and derived information.
 type Session struct {
-	Core         CoreSession   `json:"core"`
-	IsAlive      bool          `json:"is_alive"`
-	ClaudeStatus ClaudeStatus  `json:"claude_status"`
-	GitStatus    GitStatus     `json:"git_status"`
-	LastActivity time.Time     `json:"last_activity"`
+	Core         CoreSession  `json:"core"`
+	IsAlive      bool         `json:"is_alive"`
+	ClaudeStatus ClaudeStatus `json:"claude_status"`
+	GitStatus    GitStatus    `json:"git_status"`
+	LastActivity time.Time    `json:"last_activity"`
 }
 
 // ClaudeState represents the current activity state of Claude
@@ -57,19 +57,19 @@ type ClaudeStatus struct {
 
 // GitStatus represents the git working tree status
 type GitStatus struct {
-	HasChanges      bool     `json:"has_changes"`
-	ModifiedFiles   []string `json:"modified_files"`
-	AddedFiles      []string `json:"added_files"`
-	DeletedFiles    []string `json:"deleted_files"`
-	UntrackedFiles  []string `json:"untracked_files"`
-	CommitCount     int      `json:"commit_count"`
+	HasChanges     bool     `json:"has_changes"`
+	ModifiedFiles  []string `json:"modified_files"`
+	AddedFiles     []string `json:"added_files"`
+	DeletedFiles   []string `json:"deleted_files"`
+	UntrackedFiles []string `json:"untracked_files"`
+	CommitCount    int      `json:"commit_count"`
 }
 
 // ClaudeMessage represents a parsed JSONL message from Claude
 type ClaudeMessage struct {
-	Role      string      `json:"role"`
-	Content   []Content   `json:"content"`
-	Timestamp time.Time   `json:"timestamp"`
+	Role      string    `json:"role"`
+	Content   []Content `json:"content"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // Content represents message content (text or tool use)

@@ -86,14 +86,13 @@ func (r *RealChecker) FindSessionID(worktreePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	if claudeSession == nil {
 		return "", fmt.Errorf("no Claude session found for worktree %s", worktreePath)
 	}
-	
+
 	return claudeSession.SessionID, nil
 }
-
 
 func (r *RealChecker) parseLastMessage(jsonlPath string) (types.ClaudeMessage, error) {
 	file, err := os.Open(jsonlPath)
@@ -231,7 +230,6 @@ func (r *RealChecker) calculateAvailability(timestamp time.Time) types.Availabil
 		return types.AvailVeryStale
 	}
 }
-
 
 // MockChecker implements Checker for testing
 type MockChecker struct {

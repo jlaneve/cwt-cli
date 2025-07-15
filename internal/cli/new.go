@@ -46,7 +46,7 @@ func runNewCmd(cmd *cobra.Command, args []string) error {
 
 	// Create session
 	fmt.Printf("Creating session '%s'...\n", sessionName)
-	
+
 	if err := sm.CreateSession(sessionName); err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
 	}
@@ -64,21 +64,20 @@ func runNewCmd(cmd *cobra.Command, args []string) error {
 
 func promptForSessionName() (string, error) {
 	reader := bufio.NewReader(os.Stdin)
-	
+
 	for {
 		fmt.Print("Enter session name: ")
 		input, err := reader.ReadString('\n')
 		if err != nil {
 			return "", err
 		}
-		
+
 		sessionName := strings.TrimSpace(input)
 		if sessionName == "" {
 			fmt.Println("Session name cannot be empty. Please try again.")
 			continue
 		}
-		
+
 		return sessionName, nil
 	}
 }
-

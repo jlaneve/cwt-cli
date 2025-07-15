@@ -194,7 +194,7 @@ func savePreviousBranch(branch string) error {
 
 	dataDir := sm.GetDataDir()
 	previousBranchFile := filepath.Join(dataDir, "previous_branch")
-	
+
 	// Ensure data directory exists
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		return err
@@ -212,7 +212,7 @@ func loadPreviousBranch() (string, error) {
 
 	dataDir := sm.GetDataDir()
 	previousBranchFile := filepath.Join(dataDir, "previous_branch")
-	
+
 	data, err := os.ReadFile(previousBranchFile)
 	if err != nil {
 		return "", err
@@ -230,7 +230,7 @@ func clearPreviousBranch() error {
 
 	dataDir := sm.GetDataDir()
 	previousBranchFile := filepath.Join(dataDir, "previous_branch")
-	
+
 	return os.Remove(previousBranchFile)
 }
 
@@ -238,30 +238,30 @@ func clearPreviousBranch() error {
 func handleUncommittedChanges() error {
 	fmt.Println("⚠️  You have uncommitted changes that need to be handled before switching branches.")
 	fmt.Println()
-	
+
 	// Show what changes exist
 	if err := showUncommittedChanges(); err != nil {
 		fmt.Printf("Warning: failed to show changes: %v\n", err)
 	}
-	
+
 	fmt.Println()
 	fmt.Println("How would you like to handle these changes?")
 	fmt.Println("  1. 📦 Stash changes (recommended - easily recoverable)")
 	fmt.Println("  2. 💾 Commit changes (permanent)")
 	fmt.Println("  3. ❌ Cancel switch")
 	fmt.Println()
-	
+
 	for {
 		fmt.Print("Enter your choice (1-3) [1]: ")
-		
+
 		var input string
 		fmt.Scanln(&input)
-		
+
 		// Default to stash if no input
 		if input == "" {
 			input = "1"
 		}
-		
+
 		switch input {
 		case "1":
 			return stashChanges()
@@ -283,7 +283,7 @@ func showUncommittedChanges() error {
 	if err != nil {
 		return err
 	}
-	
+
 	if len(output) > 0 {
 		fmt.Println("Changes that will be affected:")
 		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
@@ -293,26 +293,26 @@ func showUncommittedChanges() error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
 // stashChanges stashes the current changes
 func stashChanges() error {
 	fmt.Println("📦 Stashing changes...")
-	
+
 	// Create a meaningful stash message
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	message := fmt.Sprintf("CWT auto-stash before branch switch - %s", timestamp)
-	
+
 	cmd := exec.Command("git", "stash", "push", "-m", message)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to stash changes: %w", err)
 	}
-	
+
 	fmt.Println("✅ Changes stashed successfully!")
 	fmt.Println("💡 Use 'git stash pop' to restore them later")
 	return nil
@@ -321,34 +321,34 @@ func stashChanges() error {
 // commitChanges prompts for a commit message and commits changes
 func commitChanges() error {
 	fmt.Print("Enter commit message: ")
-	
+
 	reader := bufio.NewReader(os.Stdin)
 	message, err := reader.ReadString('\n')
 	if err != nil {
 		return fmt.Errorf("failed to read commit message: %w", err)
 	}
-	
+
 	message = strings.TrimSpace(message)
 	if message == "" {
 		return fmt.Errorf("commit message cannot be empty")
 	}
-	
+
 	fmt.Println("💾 Committing changes...")
-	
+
 	// Add all changes
 	if err := exec.Command("git", "add", ".").Run(); err != nil {
 		return fmt.Errorf("failed to stage changes: %w", err)
 	}
-	
+
 	// Commit changes
 	cmd := exec.Command("git", "commit", "-m", message)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to commit changes: %w", err)
 	}
-	
+
 	fmt.Println("✅ Changes committed successfully!")
 	return nil
 }

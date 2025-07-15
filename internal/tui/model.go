@@ -39,17 +39,17 @@ type Model struct {
 	successMessage   string // For success toast notifications
 	ready            bool
 	attachOnExit     string // Session name to attach to when exiting TUI
-	
+
 	// Terminal dimensions
 	width  int
 	height int
-	
+
 	// Split-pane state
 	selectedIndex int // Which session is selected in the left panel
-	
+
 	// Session creation tracking
 	creatingSessions map[string]bool // Track sessions being created
-	
+
 	// Event channel for file watching
 	eventChan chan tea.Msg
 }
@@ -85,15 +85,18 @@ type (
 
 	// Internal events
 	refreshCompleteMsg struct{ sessions []types.Session }
-	errorMsg          struct{ err error }
-	confirmYesMsg     struct{}
-	confirmNoMsg      struct{}
-	
+	errorMsg           struct{ err error }
+	confirmYesMsg      struct{}
+	confirmNoMsg       struct{}
+
 	// Session creation status
-	sessionCreatingMsg    struct{ name string }
-	sessionCreatedMsg     struct{ name string }
-	sessionCreationFailedMsg struct{ name string; err error }
-	
+	sessionCreatingMsg       struct{ name string }
+	sessionCreatedMsg        struct{ name string }
+	sessionCreationFailedMsg struct {
+		name string
+		err  error
+	}
+
 	// Toast messages
 	clearSuccessMsg struct{}
 
@@ -103,10 +106,10 @@ type (
 		onYes   func() tea.Cmd
 		onNo    func() tea.Cmd
 	}
-	
+
 	// New session dialog events
-	showNewSessionDialogMsg struct{}
-	newSessionDialogInputMsg struct{ input string }
+	showNewSessionDialogMsg   struct{}
+	newSessionDialogInputMsg  struct{ input string }
 	newSessionDialogSubmitMsg struct{}
 	newSessionDialogCancelMsg struct{}
 
@@ -115,7 +118,7 @@ type (
 
 	// Attach request (exits TUI and attaches)
 	attachRequestMsg struct{ sessionName string }
-	
+
 	// File watcher setup
 	fileWatcherSetupMsg struct{ watcher *fsnotify.Watcher }
 )
@@ -125,7 +128,7 @@ func NewModel(stateManager *state.Manager) (*Model, error) {
 	if debugLogger != nil {
 		debugLogger.Println("NewModel: Starting TUI model creation")
 	}
-	
+
 	// Load initial sessions
 	sessions, err := stateManager.DeriveFreshSessions()
 	if err != nil {
@@ -173,7 +176,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		return m, nil
-		
+
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
 
@@ -183,10 +186,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for _, session := range m.sessions {
 			oldSessionIDs[session.Core.ID] = true
 		}
-		
+
 		// Update sessions
 		m.sessions = msg.sessions
-		
+
 		// Ensure selectedIndex is within bounds
 		totalItems := len(m.sessions) + len(m.creatingSessions)
 		if m.selectedIndex >= totalItems {
@@ -195,9 +198,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.selectedIndex < 0 {
 			m.selectedIndex = 0
 		}
-		
+
 		m.ready = true
-		
+
 		// Add watches for any new sessions
 		if m.fileWatcher != nil {
 			for _, session := range m.sessions {
@@ -207,7 +210,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-		
+
 		return m, nil
 
 	case sessionStateChangedMsg:
@@ -322,7 +325,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			debugLogger.Printf("Update: Set attachOnExit=%s, calling tea.Quit", msg.sessionName)
 		}
 		return m, tea.Quit
-		
+
 	case fileWatcherSetupMsg:
 		// Store the file watcher in the model
 		m.fileWatcher = msg.watcher
@@ -337,7 +340,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 	if debugLogger != nil {
 		debugLogger.Printf("handleKeyPress: Key pressed: '%s'", msg.String())
 	}
-	
+
 	// Handle confirmation dialog first
 	if m.confirmDialog != nil {
 		if debugLogger != nil {
@@ -379,7 +382,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 	if debugLogger != nil {
 		debugLogger.Printf("handleKeyPress: Processing action key: '%s', sessions: %d", msg.String(), len(m.sessions))
 	}
-	
+
 	switch msg.String() {
 	case "q", "ctrl+c":
 		if debugLogger != nil {
@@ -406,18 +409,18 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 			if debugLogger != nil {
 				debugLogger.Printf("handleKeyPress: Processing attach directly for session: %s", sessionID)
 			}
-			
+
 			// Handle attach directly instead of through a command
 			session := m.findSession(sessionID)
 			if session == nil {
 				m.lastError = "Session not found"
 				return m, nil
 			}
-			
+
 			if debugLogger != nil {
 				debugLogger.Printf("handleKeyPress: Found session %s, IsAlive: %v", session.Core.Name, session.IsAlive)
 			}
-			
+
 			if !session.IsAlive {
 				// Show confirmation dialog for dead sessions
 				if debugLogger != nil {
@@ -434,7 +437,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (Model, tea.Cmd) {
 				}
 				return m, nil
 			}
-			
+
 			// Alive session - exit and attach
 			if debugLogger != nil {
 				debugLogger.Printf("handleKeyPress: Session %s is alive, setting attachOnExit", session.Core.Name)
@@ -520,7 +523,7 @@ func (m Model) getSelectedSessionID() string {
 	if debugLogger != nil {
 		debugLogger.Printf("getSelectedSessionID: Sessions count: %d, Creating: %d", len(m.sessions), len(m.creatingSessions))
 	}
-	
+
 	totalItems := len(m.sessions) + len(m.creatingSessions)
 	if totalItems == 0 {
 		if debugLogger != nil {
@@ -528,12 +531,12 @@ func (m Model) getSelectedSessionID() string {
 		}
 		return ""
 	}
-	
+
 	selectedIdx := m.selectedIndex
 	if debugLogger != nil {
 		debugLogger.Printf("getSelectedSessionID: Selected index: %d", selectedIdx)
 	}
-	
+
 	// Check if selecting a creating session
 	if selectedIdx < len(m.creatingSessions) {
 		if debugLogger != nil {
@@ -541,7 +544,7 @@ func (m Model) getSelectedSessionID() string {
 		}
 		return ""
 	}
-	
+
 	// Adjust for regular sessions
 	sessionIndex := selectedIdx - len(m.creatingSessions)
 	if sessionIndex >= len(m.sessions) {
@@ -550,12 +553,12 @@ func (m Model) getSelectedSessionID() string {
 		}
 		return ""
 	}
-	
+
 	sessionID := m.sessions[sessionIndex].Core.ID
 	if debugLogger != nil {
 		debugLogger.Printf("getSelectedSessionID: Returning session ID: %s (name: %s)", sessionID, m.sessions[sessionIndex].Core.Name)
 	}
-	
+
 	return sessionID
 }
 
@@ -597,14 +600,14 @@ func (m Model) handleShowNewSessionDialog() (Model, tea.Cmd) {
 // handleNewSessionDialogKeys handles keyboard input for the new session dialog
 func (m Model) handleNewSessionDialogKeys(msg tea.KeyMsg) (Model, tea.Cmd) {
 	dialog := m.newSessionDialog
-	
+
 	switch msg.String() {
 	case "esc":
 		return m, func() tea.Msg { return newSessionDialogCancelMsg{} }
-	
+
 	case "enter":
 		return m, func() tea.Msg { return newSessionDialogSubmitMsg{} }
-	
+
 	case "backspace":
 		if len(dialog.NameInput) > 0 {
 			dialog.NameInput = dialog.NameInput[:len(dialog.NameInput)-1]
@@ -612,7 +615,7 @@ func (m Model) handleNewSessionDialogKeys(msg tea.KeyMsg) (Model, tea.Cmd) {
 		// Clear error when user starts typing
 		dialog.Error = ""
 		return m, nil
-	
+
 	default:
 		// Handle regular character input
 		if len(msg.String()) == 1 {
@@ -641,13 +644,13 @@ func (m Model) handleNewSessionDialogSubmit() (Model, tea.Cmd) {
 	if dialog == nil {
 		return m, nil
 	}
-	
+
 	// Validate input
 	if strings.TrimSpace(dialog.NameInput) == "" {
 		dialog.Error = "Session name is required"
 		return m, nil
 	}
-	
+
 	// Check for duplicate session names
 	for _, session := range m.sessions {
 		if session.Core.Name == strings.TrimSpace(dialog.NameInput) {
@@ -655,13 +658,13 @@ func (m Model) handleNewSessionDialogSubmit() (Model, tea.Cmd) {
 			return m, nil
 		}
 	}
-	
+
 	// Create the session
 	name := strings.TrimSpace(dialog.NameInput)
-	
+
 	// Clear the dialog
 	m.newSessionDialog = nil
-	
+
 	// Create session using state manager
 	return m, tea.Batch(
 		// Show immediate "creating" status
@@ -674,7 +677,7 @@ func (m Model) handleNewSessionDialogSubmit() (Model, tea.Cmd) {
 			if err != nil {
 				return sessionCreationFailedMsg{name: name, err: err}
 			}
-			
+
 			// Signal completion
 			return sessionCreatedMsg{name: name}
 		},
@@ -778,4 +781,3 @@ func executeCommand(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
 	return cmd.Run()
 }
-

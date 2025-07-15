@@ -18,7 +18,7 @@ import (
 func newStatusCmd() *cobra.Command {
 	var summary bool
 	var branch bool
-	
+
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show comprehensive status of all sessions with change details",
@@ -161,10 +161,10 @@ func showDetailedStatus(sessions []types.Session, showBranch bool) error {
 func renderSessionStatus(session types.Session, showBranch bool) {
 	// Session header
 	fmt.Printf("🏷️  %s", session.Core.Name)
-	
+
 	// Show main status indicators
 	statusIndicators := []string{}
-	
+
 	if session.IsAlive {
 		statusIndicators = append(statusIndicators, "🟢 active")
 	} else {
@@ -190,11 +190,11 @@ func renderSessionStatus(session types.Session, showBranch bool) {
 	// Show Claude status
 	claudeIcon := getClaudeIcon(session.ClaudeStatus.State)
 	fmt.Printf("   %s Claude: %s", claudeIcon, string(session.ClaudeStatus.State))
-	
+
 	if session.ClaudeStatus.StatusMessage != "" {
 		fmt.Printf(" - %s", session.ClaudeStatus.StatusMessage)
 	}
-	
+
 	if !session.ClaudeStatus.LastMessage.IsZero() {
 		age := time.Since(session.ClaudeStatus.LastMessage)
 		fmt.Printf(" (last: %s ago)", FormatDuration(age))
@@ -204,24 +204,24 @@ func renderSessionStatus(session types.Session, showBranch bool) {
 	// Show detailed git status
 	if session.GitStatus.HasChanges {
 		fmt.Printf("   📁 Git changes:\n")
-		
+
 		if len(session.GitStatus.ModifiedFiles) > 0 {
-			fmt.Printf("      📝 Modified: %s\n", 
+			fmt.Printf("      📝 Modified: %s\n",
 				formatFileList(session.GitStatus.ModifiedFiles, 3))
 		}
-		
+
 		if len(session.GitStatus.AddedFiles) > 0 {
-			fmt.Printf("      ➕ Added: %s\n", 
+			fmt.Printf("      ➕ Added: %s\n",
 				formatFileList(session.GitStatus.AddedFiles, 3))
 		}
-		
+
 		if len(session.GitStatus.DeletedFiles) > 0 {
-			fmt.Printf("      ➖ Deleted: %s\n", 
+			fmt.Printf("      ➖ Deleted: %s\n",
 				formatFileList(session.GitStatus.DeletedFiles, 3))
 		}
-		
+
 		if len(session.GitStatus.UntrackedFiles) > 0 {
-			fmt.Printf("      ❓ Untracked: %s\n", 
+			fmt.Printf("      ❓ Untracked: %s\n",
 				formatFileList(session.GitStatus.UntrackedFiles, 3))
 		}
 	}
@@ -278,7 +278,7 @@ func isSessionPublished(session types.Session) bool {
 	// This is a simplified check - in a full implementation,
 	// you'd check if the branch has been pushed to remote
 	branchName := fmt.Sprintf("cwt-%s", session.Core.Name)
-	
+
 	// Change to worktree directory to check remote tracking
 	originalDir, err := os.Getwd()
 	if err != nil {

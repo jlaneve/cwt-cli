@@ -14,7 +14,7 @@ import (
 
 func newListCmd() *cobra.Command {
 	var verbose bool
-	
+
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List all sessions with their current status",
@@ -72,10 +72,10 @@ func renderCompactSessionList(sessions []types.Session) {
 	fmt.Printf("Found %d session(s):\n\n", len(sessions))
 
 	// Calculate max widths for each column based on content
-	maxNameLen := 4 // "NAME"
-	maxTmuxLen := 4 // "TMUX"
-	maxClaudeLen := 6 // "CLAUDE"
-	maxGitLen := 3 // "GIT"
+	maxNameLen := 4     // "NAME"
+	maxTmuxLen := 4     // "TMUX"
+	maxClaudeLen := 6   // "CLAUDE"
+	maxGitLen := 3      // "GIT"
 	maxActivityLen := 8 // "ACTIVITY"
 
 	// Pre-format all data to calculate actual widths
@@ -86,7 +86,7 @@ func renderCompactSessionList(sessions []types.Session) {
 		git      string
 		activity string
 	}
-	
+
 	rows := make([]rowData, len(sessions))
 	for i, session := range sessions {
 		rows[i] = rowData{
@@ -96,7 +96,7 @@ func renderCompactSessionList(sessions []types.Session) {
 			git:      formatGitStatus(session.GitStatus),
 			activity: FormatActivity(session.LastActivity),
 		}
-		
+
 		// Update max lengths (using visual length)
 		if l := visualLength(rows[i].name); l > maxNameLen {
 			maxNameLen = l
@@ -129,7 +129,7 @@ func renderCompactSessionList(sessions []types.Session) {
 		padRight("CLAUDE", maxClaudeLen),
 		padRight("GIT", maxGitLen),
 		padRight("ACTIVITY", maxActivityLen))
-	
+
 	fmt.Printf("%s  %s  %s  %s  %s\n",
 		strings.Repeat("-", maxNameLen),
 		strings.Repeat("-", maxTmuxLen),
@@ -161,11 +161,11 @@ func renderVerboseSessionList(sessions []types.Session) {
 		fmt.Printf("   Created: %s\n", session.Core.CreatedAt.Format("2006-01-02 15:04:05"))
 		fmt.Printf("   Worktree: %s\n", session.Core.WorktreePath)
 		fmt.Printf("   \n")
-		
+
 		// Tmux status
-		fmt.Printf("   🖥️  Tmux: %s (session: %s)\n", 
+		fmt.Printf("   🖥️  Tmux: %s (session: %s)\n",
 			formatTmuxStatus(session.IsAlive), session.Core.TmuxSession)
-		
+
 		// Git status
 		gitDetails := ""
 		if session.GitStatus.HasChanges {
@@ -182,7 +182,7 @@ func renderVerboseSessionList(sessions []types.Session) {
 			gitDetails = fmt.Sprintf(" (%s)", strings.Join(changes, ", "))
 		}
 		fmt.Printf("   📁 Git: %s%s\n", formatGitStatus(session.GitStatus), gitDetails)
-		
+
 		// Claude status
 		claudeDetails := ""
 		if session.ClaudeStatus.SessionID != "" {
@@ -193,12 +193,12 @@ func renderVerboseSessionList(sessions []types.Session) {
 			claudeDetails += fmt.Sprintf(" (last: %s ago)", FormatDuration(age))
 		}
 		fmt.Printf("   🤖 Claude: %s%s\n", formatClaudeStatusShort(session.ClaudeStatus), claudeDetails)
-		
+
 		// Show full message in verbose mode if available
 		if session.ClaudeStatus.StatusMessage != "" {
 			fmt.Printf("      Message: %s\n", session.ClaudeStatus.StatusMessage)
 		}
-		
+
 		// Last activity
 		fmt.Printf("   ⏰ Activity: %s\n", FormatActivity(session.LastActivity))
 	}
@@ -252,9 +252,9 @@ func formatClaudeStatus(status types.ClaudeStatus) string {
 func formatGitStatus(status types.GitStatus) string {
 	if status.HasChanges {
 		// Calculate total changes
-		total := len(status.ModifiedFiles) + len(status.AddedFiles) + 
+		total := len(status.ModifiedFiles) + len(status.AddedFiles) +
 			len(status.DeletedFiles) + len(status.UntrackedFiles)
-		
+
 		if total == 1 {
 			return "📝 1 change"
 		}
@@ -267,7 +267,7 @@ func FormatActivity(lastActivity time.Time) string {
 	if lastActivity.IsZero() {
 		return "unknown"
 	}
-	
+
 	age := time.Since(lastActivity)
 	if age < time.Minute {
 		return "just now"

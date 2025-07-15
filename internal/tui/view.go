@@ -408,7 +408,7 @@ func (m Model) renderRightPanel(width int, height int) string {
 	if session.GitStatus.HasChanges {
 		// Calculate available width for file names (account for border, padding, and git prefix)
 		availableWidth := width - 10 // Border(2) + Padding(2) + Indentation(4) + GitPrefix(2)
-		
+
 		if len(session.GitStatus.ModifiedFiles) > 0 {
 			lines = append(lines, fmt.Sprintf("  Modified (%d):", len(session.GitStatus.ModifiedFiles)))
 			for _, file := range session.GitStatus.ModifiedFiles {
@@ -466,18 +466,18 @@ func (m Model) renderStatusArea() string {
 
 // renderErrorMessage handles error message rendering with 2-line support
 func (m Model) renderErrorMessage() string {
-	maxWidth := m.width - 10 // Leave some margin
+	maxWidth := m.width - 10       // Leave some margin
 	errorMsg := "✗ " + m.lastError // Don't sanitize - preserve newlines for wrapping
-	
+
 	// Split message into words for intelligent wrapping
 	words := strings.Fields(errorMsg)
 	if len(words) == 0 {
 		return errorStyle.Height(2).Render("✗ Error")
 	}
-	
+
 	var lines []string
 	currentLine := ""
-	
+
 	for _, word := range words {
 		// Check if adding this word would exceed the width
 		testLine := currentLine
@@ -485,7 +485,7 @@ func (m Model) renderErrorMessage() string {
 			testLine += " "
 		}
 		testLine += word
-		
+
 		if len(testLine) <= maxWidth {
 			currentLine = testLine
 		} else {
@@ -504,17 +504,17 @@ func (m Model) renderErrorMessage() string {
 			}
 		}
 	}
-	
+
 	// Add the last line if it has content
 	if currentLine != "" {
 		lines = append(lines, currentLine)
 	}
-	
+
 	// Ensure we have exactly 2 lines for consistent spacing
 	for len(lines) < 2 {
 		lines = append(lines, "")
 	}
-	
+
 	errorText := strings.Join(lines, "\n")
 	return errorStyle.Height(2).Render(errorText)
 }
@@ -535,16 +535,16 @@ func (m Model) renderSuccessMessage() string {
 // renderErrorMessageForPanel renders error message for right panel with 2-line support
 func (m Model) renderErrorMessageForPanel(maxWidth int) []string {
 	errorMsg := "✗ " + m.lastError
-	
+
 	// Split message into words for intelligent wrapping
 	words := strings.Fields(errorMsg)
 	if len(words) == 0 {
 		return []string{errorStyle.Render("✗ Error"), ""}
 	}
-	
+
 	var lines []string
 	currentLine := ""
-	
+
 	for _, word := range words {
 		// Check if adding this word would exceed the width
 		testLine := currentLine
@@ -552,7 +552,7 @@ func (m Model) renderErrorMessageForPanel(maxWidth int) []string {
 			testLine += " "
 		}
 		testLine += word
-		
+
 		if len(testLine) <= maxWidth {
 			currentLine = testLine
 		} else {
@@ -571,17 +571,17 @@ func (m Model) renderErrorMessageForPanel(maxWidth int) []string {
 			}
 		}
 	}
-	
+
 	// Add the last line if it has content
 	if currentLine != "" {
 		lines = append(lines, errorStyle.Render(currentLine))
 	}
-	
+
 	// Ensure we have exactly 2 lines for consistent spacing
 	for len(lines) < 2 {
 		lines = append(lines, "")
 	}
-	
+
 	return lines
 }
 
@@ -825,7 +825,7 @@ func truncateFileName(filename string, maxWidth int) string {
 	if len(filename) <= maxWidth {
 		return filename
 	}
-	
+
 	// If the filename is too long, show the beginning and end with "..." in the middle
 	if maxWidth < 10 {
 		// If very narrow, just truncate with ...
@@ -834,10 +834,10 @@ func truncateFileName(filename string, maxWidth int) string {
 		}
 		return filename[:maxWidth-3] + "..."
 	}
-	
+
 	// For longer filenames, show beginning and end
 	prefixLen := (maxWidth - 3) / 2
 	suffixLen := maxWidth - 3 - prefixLen
-	
+
 	return filename[:prefixLen] + "..." + filename[len(filename)-suffixLen:]
 }

@@ -45,7 +45,7 @@ func (r *RealChecker) CaptureOutput(sessionName string) (string, error) {
 func (r *RealChecker) CreateSession(name, workdir, command string) error {
 	args := []string{
 		"new-session",
-		"-d", // detached
+		"-d",       // detached
 		"-s", name, // session name
 		"-c", workdir, // working directory
 	}
@@ -101,12 +101,12 @@ func (r *RealChecker) ListSessions() ([]string, error) {
 
 // MockChecker implements Checker for testing
 type MockChecker struct {
-	AliveSessions   map[string]bool
-	Output          map[string]string
-	CreatedSessions []string
-	KilledSessions  []string
+	AliveSessions    map[string]bool
+	Output           map[string]string
+	CreatedSessions  []string
+	KilledSessions   []string
 	ShouldFailCreate bool
-	Delay           time.Duration
+	Delay            time.Duration
 }
 
 // NewMockChecker creates a new MockChecker

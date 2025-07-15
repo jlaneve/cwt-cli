@@ -185,7 +185,7 @@ func (m *sessionSelectorModel) View() string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("205"))
-	
+
 	b.WriteString(titleStyle.Render(m.title))
 	b.WriteString("\n")
 
@@ -199,7 +199,7 @@ func (m *sessionSelectorModel) View() string {
 		// Session info
 		status := getSessionStatusIndicator(session)
 		activity := FormatActivity(session.LastActivity)
-		
+
 		line := fmt.Sprintf("%s%s %s (%s)",
 			prefix,
 			session.Core.Name,
@@ -222,7 +222,7 @@ func (m *sessionSelectorModel) View() string {
 	instructionStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("240")).
 		Italic(true)
-	
+
 	instructions := "↑/↓: navigate • enter: select • q/esc: cancel"
 	b.WriteString(instructionStyle.Render(instructions))
 
@@ -261,7 +261,7 @@ func getSessionStatusIndicator(session types.Session) string {
 
 	// Git status
 	if session.GitStatus.HasChanges {
-		total := len(session.GitStatus.ModifiedFiles) + len(session.GitStatus.AddedFiles) + 
+		total := len(session.GitStatus.ModifiedFiles) + len(session.GitStatus.AddedFiles) +
 			len(session.GitStatus.DeletedFiles) + len(session.GitStatus.UntrackedFiles)
 		indicators = append(indicators, fmt.Sprintf("📝%d", total))
 	} else {
