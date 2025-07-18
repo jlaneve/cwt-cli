@@ -17,10 +17,6 @@ help:
 test:
 	go test ./internal/... -v
 
-# Run tests with coverage
-test-cover:
-	go test ./internal/... -v -coverprofile=coverage.out
-	go tool cover -html=coverage.out -o coverage.html
 
 # Build the binary
 build:
@@ -28,7 +24,7 @@ build:
 
 # Clean build artifacts
 clean:
-	rm -f cwt coverage.out coverage.html
+	rm -f cwt
 
 # Run linters (requires golangci-lint)
 lint:
