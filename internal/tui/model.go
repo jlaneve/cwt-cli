@@ -24,9 +24,16 @@ const (
 	ScrollAmount = 10 // Number of lines to scroll in diff view
 )
 
-func init() {
-	// Create debug log file
-	logFile, err := os.OpenFile("cwt-tui-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+// initDebugLogger initializes the debug logger to write to the data directory
+func initDebugLogger(dataDir string, enabled bool) {
+	if !enabled {
+		return // Debug mode not enabled
+	}
+	if debugLogger != nil {
+		return // Already initialized
+	}
+	logPath := dataDir + "/tui-debug.log"
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
 		debugLogger = log.New(logFile, "[TUI-DEBUG] ", log.LstdFlags|log.Lshortfile)
 		debugLogger.Println("=== TUI Debug Session Started ===")
@@ -73,8 +80,9 @@ type ConfirmDialog struct {
 
 // NewSessionDialog represents a new session creation dialog
 type NewSessionDialog struct {
-	NameInput string
-	Error     string
+	NameInput     string
+	DangerousMode bool
+	Error         string
 }
 
 // DiffMode represents the diff viewer state
@@ -175,7 +183,10 @@ type (
 )
 
 // NewModel creates a new TUI model
-func NewModel(stateManager *state.Manager) (*Model, error) {
+func NewModel(stateManager *state.Manager, debugMode bool) (*Model, error) {
+	// Initialize debug logger with the data directory (only if debug mode enabled)
+	initDebugLogger(stateManager.GetDataDir(), debugMode)
+
 	if debugLogger != nil {
 		debugLogger.Println("NewModel: Starting TUI model creation")
 	}
@@ -848,6 +859,11 @@ func (m Model) handleNewSessionDialogKeys(msg tea.KeyMsg) (Model, tea.Cmd) {
 	case "enter":
 		return m, func() tea.Msg { return newSessionDialogSubmitMsg{} }
 
+	case "tab":
+		// Toggle dangerous mode
+		dialog.DangerousMode = !dialog.DangerousMode
+		return m, nil
+
 	case "backspace":
 		if len(dialog.NameInput) > 0 {
 			dialog.NameInput = dialog.NameInput[:len(dialog.NameInput)-1]
@@ -901,6 +917,7 @@ func (m Model) handleNewSessionDialogSubmit() (Model, tea.Cmd) {
 
 	// Create the session
 	name := strings.TrimSpace(dialog.NameInput)
+	dangerousMode := dialog.DangerousMode
 
 	// Clear the dialog
 	m.newSessionDialog = nil
@@ -913,7 +930,7 @@ func (m Model) handleNewSessionDialogSubmit() (Model, tea.Cmd) {
 		},
 		// Create session in background
 		func() tea.Msg {
-			err := m.stateManager.CreateSession(name)
+			err := m.stateManager.CreateSession(name, dangerousMode)
 			if err != nil {
 				return sessionCreationFailedMsg{name: name, err: err}
 			}

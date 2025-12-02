@@ -63,7 +63,7 @@ func TestCleanupOperations_FindAndCleanupStaleResources_WithStaleSession(t *test
 
 	// Create a session
 	sessionOps := NewSessionOperations(manager)
-	err := sessionOps.CreateSession("stale-session")
+	err := sessionOps.CreateSession("stale-session", false)
 	if err != nil {
 		t.Fatalf("CreateSession() error = %v", err)
 	}

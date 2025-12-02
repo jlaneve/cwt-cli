@@ -31,7 +31,7 @@ func TestSessionOperations_CreateSession(t *testing.T) {
 	sessionOps := NewSessionOperations(manager)
 
 	// Test creating a session
-	err := sessionOps.CreateSession("test-session")
+	err := sessionOps.CreateSession("test-session", false)
 	if err != nil {
 		t.Fatalf("CreateSession() error = %v", err)
 	}
@@ -69,7 +69,7 @@ func TestSessionOperations_FindSessionByName(t *testing.T) {
 	sessionOps := NewSessionOperations(manager)
 
 	// Create a session first
-	err := sessionOps.CreateSession("findme-session")
+	err := sessionOps.CreateSession("findme-session", false)
 	if err != nil {
 		t.Fatalf("CreateSession() error = %v", err)
 	}
@@ -113,7 +113,7 @@ func TestSessionOperations_FindSessionByID(t *testing.T) {
 	sessionOps := NewSessionOperations(manager)
 
 	// Create a session first
-	err := sessionOps.CreateSession("findbyid-session")
+	err := sessionOps.CreateSession("findbyid-session", false)
 	if err != nil {
 		t.Fatalf("CreateSession() error = %v", err)
 	}
@@ -160,7 +160,7 @@ func TestSessionOperations_DeleteSession(t *testing.T) {
 	sessionOps := NewSessionOperations(manager)
 
 	// Create a session first
-	err := sessionOps.CreateSession("delete-me")
+	err := sessionOps.CreateSession("delete-me", false)
 	if err != nil {
 		t.Fatalf("CreateSession() error = %v", err)
 	}
@@ -222,7 +222,7 @@ func TestSessionOperations_RecreateDeadSession(t *testing.T) {
 	sessionOps := NewSessionOperations(manager)
 
 	// Create a session first
-	err := sessionOps.CreateSession("recreate-test")
+	err := sessionOps.CreateSession("recreate-test", false)
 	if err != nil {
 		t.Fatalf("CreateSession() error = %v", err)
 	}

@@ -27,7 +27,7 @@ func TestManager_CreateSession(t *testing.T) {
 	manager := NewManager(config)
 
 	// Test creating a session
-	err := manager.CreateSession("test-session")
+	err := manager.CreateSession("test-session", false)
 	if err != nil {
 		t.Fatalf("CreateSession() error = %v", err)
 	}
@@ -71,7 +71,7 @@ func TestManager_CreateSession_InvalidName(t *testing.T) {
 	}
 
 	for _, name := range invalidNames {
-		err := manager.CreateSession(name)
+		err := manager.CreateSession(name, false)
 		if err == nil {
 			t.Errorf("CreateSession(%q) should return error", name)
 		}
@@ -93,7 +93,7 @@ func TestManager_DeleteSession(t *testing.T) {
 	manager := NewManager(config)
 
 	// Create a session first
-	err := manager.CreateSession("test-delete")
+	err := manager.CreateSession("test-delete", false)
 	if err != nil {
 		t.Fatalf("CreateSession() error = %v", err)
 	}
@@ -135,12 +135,12 @@ func TestManager_FindStaleSessions(t *testing.T) {
 	manager := NewManager(config)
 
 	// Create sessions
-	err := manager.CreateSession("alive-session")
+	err := manager.CreateSession("alive-session", false)
 	if err != nil {
 		t.Fatalf("CreateSession(alive-session) error = %v", err)
 	}
 
-	err = manager.CreateSession("dead-session")
+	err = manager.CreateSession("dead-session", false)
 	if err != nil {
 		t.Fatalf("CreateSession(dead-session) error = %v", err)
 	}

@@ -24,8 +24,8 @@ func NewSessionOperations(sm *state.Manager) *SessionOperations {
 }
 
 // CreateSession creates a new session with the given name
-func (s *SessionOperations) CreateSession(name string) error {
-	return s.stateManager.CreateSession(name)
+func (s *SessionOperations) CreateSession(name string, dangerousMode bool) error {
+	return s.stateManager.CreateSession(name, dangerousMode)
 }
 
 // DeleteSession deletes the session with the given ID
@@ -81,9 +81,18 @@ func (s *SessionOperations) RecreateDeadSession(session *types.Session) error {
 
 	command := claudeExec
 
+	// Add dangerous mode flag if session was created with it
+	if session.Core.DangerousMode {
+		command = fmt.Sprintf("%s --dangerously-skip-permissions", claudeExec)
+	}
+
 	// Check if there's an existing Claude session to resume
 	if existingSessionID, err := s.stateManager.GetClaudeChecker().FindSessionID(session.Core.WorktreePath); err == nil && existingSessionID != "" {
-		command = fmt.Sprintf("%s -r %s", claudeExec, existingSessionID)
+		if session.Core.DangerousMode {
+			command = fmt.Sprintf("%s --dangerously-skip-permissions -r %s", claudeExec, existingSessionID)
+		} else {
+			command = fmt.Sprintf("%s -r %s", claudeExec, existingSessionID)
+		}
 	}
 
 	// Create the tmux session

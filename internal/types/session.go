@@ -8,11 +8,12 @@ import (
 // Only contains core information - all derived state (tmux, git, claude status)
 // is computed fresh from external systems.
 type CoreSession struct {
-	ID           string    `json:"id"`
-	Name         string    `json:"name"`
-	WorktreePath string    `json:"worktree_path"`
-	TmuxSession  string    `json:"tmux_session"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID            string    `json:"id"`
+	Name          string    `json:"name"`
+	WorktreePath  string    `json:"worktree_path"`
+	TmuxSession   string    `json:"tmux_session"`
+	CreatedAt     time.Time `json:"created_at"`
+	DangerousMode bool      `json:"dangerous_mode,omitempty"` // Run Claude with --dangerously-skip-permissions
 }
 
 // Session represents the complete session state with both persistent

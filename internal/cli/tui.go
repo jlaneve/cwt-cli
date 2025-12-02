@@ -35,7 +35,7 @@ func runTuiCmd(cmd *cobra.Command, args []string) error {
 	// Note: StateManager will be closed by the TUI when it exits
 
 	// Launch TUI
-	if err := tui.Run(sm); err != nil {
+	if err := tui.Run(sm, debug); err != nil {
 		return fmt.Errorf("TUI error: %w", err)
 	}
 

@@ -276,16 +276,26 @@ func (m Model) recreateAndAttach(sessionID string) tea.Cmd {
 		claudeExec := m.findClaudeExecutable()
 		var command string
 		if claudeExec != "" {
+			// Build base command with dangerous mode if enabled
+			baseCmd := claudeExec
+			if session.Core.DangerousMode {
+				baseCmd = fmt.Sprintf("%s --dangerously-skip-permissions", claudeExec)
+			}
+
 			// Check if there's an existing Claude session to resume for this worktree
 			if existingSessionID, err := m.stateManager.GetClaudeChecker().FindSessionID(session.Core.WorktreePath); err == nil && existingSessionID != "" {
-				command = fmt.Sprintf("%s -r %s", claudeExec, existingSessionID)
+				if session.Core.DangerousMode {
+					command = fmt.Sprintf("%s --dangerously-skip-permissions -r %s", claudeExec, existingSessionID)
+				} else {
+					command = fmt.Sprintf("%s -r %s", claudeExec, existingSessionID)
+				}
 				if debugLogger != nil {
-					debugLogger.Printf("Resuming Claude session %s for worktree %s", existingSessionID, session.Core.WorktreePath)
+					debugLogger.Printf("Resuming Claude session %s for worktree %s (dangerous=%v)", existingSessionID, session.Core.WorktreePath, session.Core.DangerousMode)
 				}
 			} else {
-				command = claudeExec
+				command = baseCmd
 				if debugLogger != nil {
-					debugLogger.Printf("Starting new Claude session for worktree %s", session.Core.WorktreePath)
+					debugLogger.Printf("Starting new Claude session for worktree %s (dangerous=%v)", session.Core.WorktreePath, session.Core.DangerousMode)
 				}
 			}
 		}

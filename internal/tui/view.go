@@ -669,6 +669,14 @@ func (m Model) renderWithNewSessionDialog(content string) string {
 	lines = append(lines, nameValue)
 	lines = append(lines, "")
 
+	// Dangerous mode toggle
+	dangerousToggle := "[ ] Dangerous mode (skip permissions)"
+	if dialog.DangerousMode {
+		dangerousToggle = "[x] Dangerous mode (skip permissions)"
+	}
+	lines = append(lines, dangerousToggle)
+	lines = append(lines, "")
+
 	// Show error if present
 	if dialog.Error != "" {
 		lines = append(lines, errorStyle.Render("Error: "+dialog.Error))
@@ -676,7 +684,7 @@ func (m Model) renderWithNewSessionDialog(content string) string {
 	}
 
 	// Instructions
-	lines = append(lines, "Enter: create  Esc: cancel")
+	lines = append(lines, "Enter: create  Tab: toggle dangerous  Esc: cancel")
 
 	dialogText := strings.Join(lines, "\n")
 	dialogBox := confirmStyle.Render(dialogText)

@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 
@@ -12,10 +11,10 @@ import (
 )
 
 // Run starts the TUI with the given state manager, creating a seamless loop
-func Run(stateManager *state.Manager) error {
+func Run(stateManager *state.Manager, debugMode bool) error {
 	for {
 		// Create the TUI model
-		model, err := NewModel(stateManager)
+		model, err := NewModel(stateManager, debugMode)
 		if err != nil {
 			return fmt.Errorf("failed to create TUI model: %w", err)
 		}
@@ -36,13 +35,9 @@ func Run(stateManager *state.Manager) error {
 		// Check if we need to attach to a session after TUI exit
 		if m, ok := finalModel.(Model); ok {
 			if sessionName := m.GetAttachOnExit(); sessionName != "" {
-				// Create logger for this function (reuse same log file)
-				logFile, err := os.OpenFile("cwt-tui-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-				if err == nil {
-					logger := log.New(logFile, "[TUI-DEBUG] ", log.LstdFlags|log.Lshortfile)
-					logger.Printf("Run: TUI exited with attachOnExit: %s", sessionName)
-					logger.Printf("Run: Calling attachToTmuxSession")
-					logFile.Close()
+				if debugLogger != nil {
+					debugLogger.Printf("Run: TUI exited with attachOnExit: %s", sessionName)
+					debugLogger.Printf("Run: Calling attachToTmuxSession")
 				}
 
 				// Attach to tmux session

@@ -85,7 +85,7 @@ func (m *Manager) DeriveFreshSessions() ([]types.Session, error) {
 }
 
 // CreateSession creates a new session with all required resources
-func (m *Manager) CreateSession(name string) error {
+func (m *Manager) CreateSession(name string, dangerousMode bool) error {
 	// Validate session name
 	if err := validateSessionName(name); err != nil {
 		return fmt.Errorf("invalid session name: %w", err)
@@ -98,11 +98,12 @@ func (m *Manager) CreateSession(name string) error {
 
 	// Generate core session
 	core := types.CoreSession{
-		ID:           generateSessionID(),
-		Name:         name,
-		WorktreePath: filepath.Join(m.config.DataDir, "worktrees", name),
-		TmuxSession:  fmt.Sprintf("cwt-%s", name),
-		CreatedAt:    time.Now(),
+		ID:            generateSessionID(),
+		Name:          name,
+		WorktreePath:  filepath.Join(m.config.DataDir, "worktrees", name),
+		TmuxSession:   fmt.Sprintf("cwt-%s", name),
+		CreatedAt:     time.Now(),
+		DangerousMode: dangerousMode,
 	}
 
 	// Check for duplicate session name
@@ -340,6 +341,9 @@ func (m *Manager) createExternalResources(core types.CoreSession) error {
 	var command string
 	if claudeExec := findClaudeExecutable(); claudeExec != "" {
 		command = claudeExec
+		if core.DangerousMode {
+			command = fmt.Sprintf("%s --dangerously-skip-permissions", claudeExec)
+		}
 	}
 
 	err := m.config.TmuxChecker.CreateSession(core.TmuxSession, core.WorktreePath, command)

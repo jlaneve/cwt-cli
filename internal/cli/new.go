@@ -11,6 +11,8 @@ import (
 	"github.com/jlaneve/cwt-cli/internal/operations"
 )
 
+var dangerousMode bool
+
 func newNewCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "new [session-name]",
@@ -24,6 +26,8 @@ If session-name is not provided, you will be prompted interactively.`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: runNewCmd,
 	}
+
+	cmd.Flags().BoolVar(&dangerousMode, "dangerous", false, "Run Claude with --dangerously-skip-permissions (no confirmation prompts)")
 
 	return cmd
 }
@@ -47,15 +51,23 @@ func runNewCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create session using operations layer
-	fmt.Printf("Creating session '%s'...\n", sessionName)
+	if dangerousMode {
+		fmt.Printf("Creating session '%s' (dangerous mode)...\n", sessionName)
+	} else {
+		fmt.Printf("Creating session '%s'...\n", sessionName)
+	}
 
 	sessionOps := operations.NewSessionOperations(sm)
-	if err := sessionOps.CreateSession(sessionName); err != nil {
+	if err := sessionOps.CreateSession(sessionName, dangerousMode); err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
 	}
 
 	// Success message
-	fmt.Printf("✅ Session '%s' created successfully!\n", sessionName)
+	if dangerousMode {
+		fmt.Printf("✅ Session '%s' created successfully! (dangerous mode enabled)\n", sessionName)
+	} else {
+		fmt.Printf("✅ Session '%s' created successfully!\n", sessionName)
+	}
 
 	// Attach to the newly created session
 	tmuxSessionName := fmt.Sprintf("cwt-%s", sessionName)

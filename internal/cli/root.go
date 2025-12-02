@@ -12,6 +12,7 @@ import (
 var (
 	dataDir    string
 	baseBranch string
+	debug      bool
 )
 
 // NewRootCmd creates the root command for the CWT CLI
@@ -36,6 +37,7 @@ the engineering manager and Claude Code sessions are your engineers working on i
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&dataDir, "data-dir", ".cwt", "Directory for storing session data")
 	rootCmd.PersistentFlags().StringVar(&baseBranch, "base-branch", "main", "Base branch for creating worktrees")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug logging to .cwt/tui-debug.log")
 
 	// Add subcommands with annotations for grouping
 
