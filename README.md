@@ -195,6 +195,46 @@ sudo mv cwt /usr/local/bin/
 3. **State Tracking**: CWT monitors session status and git changes
 4. **TUI Interface**: Real-time dashboard built with terminal UI components
 
+## Configuration
+
+### Setup Script
+
+You can create a setup script that runs automatically in every new worktree. This is useful for installing dependencies, setting up environment files, or any other project-specific initialization.
+
+Create a file at `.cwt/setup.sh`:
+
+```bash
+#!/bin/bash
+# Example setup script
+
+# Install dependencies
+npm install
+
+# Copy environment file
+cp .env.example .env
+
+# Run any other setup commands
+echo "Setup complete for $CWT_WORKTREE"
+```
+
+The script runs with the worktree directory as the working directory. Two environment variables are available:
+- `CWT_WORKTREE`: Path to the new worktree
+- `CWT_DATA_DIR`: Path to the .cwt data directory
+
+If the setup script fails (non-zero exit code), session creation is aborted and the worktree is cleaned up.
+
+### Dangerous Mode
+
+Run Claude without permission prompts using the `--dangerous` flag:
+
+```bash
+cwt new my-session --dangerous
+```
+
+Or toggle it in the TUI when creating a new session (press `Tab` to toggle).
+
+This passes `--dangerously-skip-permissions` to Claude Code, allowing it to execute tools without confirmation.
+
 ## Development
 
 ### Setting Up Pre-commit Hooks

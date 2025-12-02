@@ -329,6 +329,13 @@ func (m *Manager) createExternalResources(core types.CoreSession) error {
 		return fmt.Errorf("failed to create git worktree: %w", err)
 	}
 
+	// Run setup script if it exists
+	if err := m.runSetupScript(core.WorktreePath); err != nil {
+		// Rollback git worktree
+		m.config.GitChecker.RemoveWorktree(core.WorktreePath)
+		return fmt.Errorf("setup script failed: %w", err)
+	}
+
 	// Create Claude settings with hooks in the worktree
 	if err := m.createClaudeSettings(core.WorktreePath, core.ID); err != nil {
 		// Rollback git worktree
@@ -513,6 +520,42 @@ func findClaudeExecutable() string {
 	}
 
 	return ""
+}
+
+// runSetupScript executes the setup script if it exists
+// The script is expected to be at .cwt/setup.sh in the main repo
+func (m *Manager) runSetupScript(worktreePath string) error {
+	setupScript := filepath.Join(m.config.DataDir, "setup.sh")
+
+	// Check if setup script exists
+	info, err := os.Stat(setupScript)
+	if os.IsNotExist(err) {
+		// No setup script, that's fine
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("failed to check setup script: %w", err)
+	}
+
+	// Verify it's a file and executable
+	if info.IsDir() {
+		return fmt.Errorf("setup.sh is a directory, not a file")
+	}
+
+	// Run the setup script with the worktree as working directory
+	cmd := exec.Command("bash", setupScript)
+	cmd.Dir = worktreePath
+	cmd.Env = append(os.Environ(),
+		fmt.Sprintf("CWT_WORKTREE=%s", worktreePath),
+		fmt.Sprintf("CWT_DATA_DIR=%s", m.config.DataDir),
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("setup script failed: %w\nOutput: %s", err, string(output))
+	}
+
+	return nil
 }
 
 // GetDataDir returns the data directory path

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -55,6 +56,12 @@ func runNewCmd(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Creating session '%s' (dangerous mode)...\n", sessionName)
 	} else {
 		fmt.Printf("Creating session '%s'...\n", sessionName)
+	}
+
+	// Check if setup script exists and notify user
+	setupScript := filepath.Join(dataDir, "setup.sh")
+	if _, err := os.Stat(setupScript); err == nil {
+		fmt.Println("  Running setup script...")
 	}
 
 	sessionOps := operations.NewSessionOperations(sm)
